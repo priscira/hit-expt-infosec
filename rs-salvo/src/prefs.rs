@@ -1,0 +1,1 @@
+pub const WEIBO_DB_PTH: &str = "./weibo.db";
