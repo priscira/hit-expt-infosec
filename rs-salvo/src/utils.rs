@@ -4,18 +4,19 @@ use njord::sqlite;
 use crate::dbs::WeiboHotSearch;
 use crate::exceptions::WeiboError;
 use crate::prefs::WEIBO_DB_PTH;
+use crate::weibo_jzon_err;
 
 pub fn attain_ajax_hotsearch(hotsearch_talk: &str) -> Result<(), WeiboError> {
   let mut hot_search_arrs = vec![];
   let hot_search_jquin = jzon::parse(&hotsearch_talk)?;
   let hot_search_data = hot_search_jquin.get("data")
-    .ok_or_else(|| WeiboError::JzonError("/ajax/side/hotSearch no field data".to_string()))?;
+    .ok_or_else(|| weibo_jzon_err!("/ajax/side/hotSearch no field data"))?;
   let hot_search_real_time = hot_search_data.get("realtime")
     .ok_or_else(
-      || WeiboError::JzonError("/ajax/side/hotSearch no field data.realtime".to_string()))?;
+      || weibo_jzon_err!("/ajax/side/hotSearch no field data.realtime"))?;
   let hot_search_realtime_arrs: &Vec<JzonValue> = hot_search_real_time.as_array()
     .ok_or_else(
-      || WeiboError::JzonError("/ajax/side/hotSearch data.realtime is not array".to_string()))?;
+      || weibo_jzon_err!("/ajax/side/hotSearch data.realtime is not array"))?;
   for hot_search_realtime_arri in hot_search_realtime_arrs.iter() {
     // 判断是否是广告
     if let Some(1) = hot_search_realtime_arri.get("is_ad").and_then(|v| v.as_u8()) {

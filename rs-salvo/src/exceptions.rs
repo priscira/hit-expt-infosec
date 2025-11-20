@@ -43,3 +43,17 @@ impl From<njord::sqlite::SqliteError> for WeiboError {
     }
   }
 }
+
+#[macro_export]
+macro_rules! weibo_nyquest_err {
+  ($msg:expr) => {
+    WeiboError::NyquestError($msg.to_string())
+  };
+}
+
+#[macro_export]
+macro_rules! weibo_jzon_err {
+  ($msg:expr) => {
+    WeiboError::JzonError($msg.to_string())
+  };
+}
