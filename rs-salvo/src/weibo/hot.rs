@@ -1,9 +1,9 @@
 use nyquest::AsyncClient;
 use nyquest::r#async::Request;
 use nyquest::r#async::Response;
-use crate::exceptions::NyquestError;
+use crate::exceptions::WeiboError;
 
-pub async fn gain_ajax_hotsearch(weibo_cli: AsyncClient) -> Result<String, NyquestError> {
+pub async fn gain_ajax_hotsearch(weibo_cli: AsyncClient) -> Result<String, WeiboError> {
   let gain_info =
     Request::get("/ajax/side/hotSearch").with_header("Referer", "https://weibo.com/newlogin");
   // let reap = weibo_cli.request(gain_info).await;
@@ -14,7 +14,7 @@ pub async fn gain_ajax_hotsearch(weibo_cli: AsyncClient) -> Result<String, Nyque
   // let reap = reap?;
   let reap: Response = weibo_cli.request(gain_info).await?;
   if !reap.status().is_successful() {
-    return Err(NyquestError::new(format!("/ajax/side/hotSearch status code is {}",
+    return Err(WeiboError::NyquestError(format!("/ajax/side/hotSearch status code is {}",
                                          reap.status().code())));
   }
   let reap_talks = reap.text().await?;
