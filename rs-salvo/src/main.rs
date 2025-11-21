@@ -4,6 +4,7 @@ mod views;
 mod exceptions;
 mod utils;
 mod prefs;
+mod wm;
 
 use nyquest::ClientBuilder;
 use nyquest::AsyncClient;

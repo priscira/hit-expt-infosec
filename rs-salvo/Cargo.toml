@@ -9,7 +9,6 @@ njord = "0.5.0"
 njord_derive = "0.5.0"
 nyquest = { version = "0.3.1", features = ["async"] }
 nyquest-preset = { version = "0.3.0", features = ["async"] }
-rusqlite = "0.32.1"
 salvo = "0.84.2"
 tokio = { version = "1.48.0", features = ["macros"] }
 

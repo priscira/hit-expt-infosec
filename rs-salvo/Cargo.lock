@@ -1969,7 +1969,6 @@ dependencies = [
  "njord_derive",
  "nyquest",
  "nyquest-preset",
- "rusqlite",
  "salvo",
  "tokio",
 ]
