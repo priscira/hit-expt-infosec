@@ -15,4 +15,5 @@
 **/*.egg-info/
 
 **/*.db
+**/*.sqlite
 **/target/

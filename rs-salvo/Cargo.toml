@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+hifitime = "4.2.3"
 jzon = "0.12.5"
 njord = "0.5.0"
 njord_derive = "0.5.0"

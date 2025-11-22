@@ -1,3 +1,6 @@
+use hifitime::prelude::Epoch;
+use hifitime::prelude::Formatter;
+use hifitime::efmt::consts::ISO8601_DATE;
 use jzon::JsonValue as JzonValue;
 use njord::keys::AutoIncrementPrimaryKey;
 use njord::sqlite;
@@ -17,6 +20,11 @@ pub fn attain_ajax_hotsearch(hotsearch_talk: &str) -> Result<(), WeiboError> {
   let hot_search_realtime_arrs: &Vec<JzonValue> = hot_search_real_time.as_array()
     .ok_or_else(
       || weibo_jzon_err!("/ajax/side/hotSearch data.realtime is not array"))?;
+
+  // 当前时间
+  let nub_era = Epoch::now().map_err(|err| WeiboError::JzonError(err.to_string()))?;
+  let nub_era = Formatter::new(nub_era, ISO8601_DATE);
+
   for hot_search_realtime_arri in hot_search_realtime_arrs.iter() {
     // 判断是否是广告
     if let Some(1) = hot_search_realtime_arri.get("is_ad").and_then(|v| v.as_u8()) {
@@ -39,7 +47,7 @@ pub fn attain_ajax_hotsearch(hotsearch_talk: &str) -> Result<(), WeiboError> {
       title: realtime_title.to_string(),
       number: realtime_number,
       special: realtime_special.to_string(),
-      occur_time: "2025-11-19".to_string(),
+      occur_time: nub_era.to_string(),
     })
   }
 
