@@ -1,9 +1,9 @@
-mod weibo;
 mod dbs;
-mod views;
 mod exceptions;
-mod utils;
 mod prefs;
+mod utils;
+mod views;
+mod weibo;
 mod wm;
 
 use nyquest::ClientBuilder;
@@ -16,13 +16,13 @@ async fn main() {
   nyquest_preset::register();
   let weibo_cli: AsyncClient =
     ClientBuilder::default().base_url("https://weibo.com")
-                            .user_agent("Mozilla/5.0 (X11; Linux x86_64) \
-                                        AppleWebKit/537.36 (KHTML, like Gecko) \
-                                        Chrome/130.0.0.0 Safari/537.36")
-                            .dangerously_ignore_certificate_errors()
-                            .build_async()
-                            .await
-                            .expect("Failed to build client");
+      .user_agent("Mozilla/5.0 (X11; Linux x86_64) \
+                   AppleWebKit/537.36 (KHTML, like Gecko) \
+                   Chrome/130.0.0.0 Safari/537.36")
+      .dangerously_ignore_certificate_errors()
+      .build_async()
+      .await
+      .expect("Failed to build client");
 
   let hot_search: Result<String, WeiboError> = weibo::hot::gain_ajax_hotsearch(weibo_cli).await;
   match hot_search {
@@ -32,7 +32,7 @@ async fn main() {
       } else {
         println!("成功");
       }
-    },
+    }
     | Err(e) => println!("失败: {}", e)
   };
 }

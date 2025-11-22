@@ -4,4 +4,5 @@ CREATE TABLE IF NOT EXISTS weibo_hot_search
  title TEXT NOT NULL,
  number INTEGER NOT NULL,
  special TEXT NOT NULL DEFAULT '',
- occur_time TEXT NOT NULL CHECK (occur_time GLOB '????-??-??'));
+ occur_era TEXT NOT NULL CHECK (occur_era GLOB '????-??-??'),
+ UNIQUE (title, occur_era));

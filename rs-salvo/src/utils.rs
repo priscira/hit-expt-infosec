@@ -1,14 +1,15 @@
+use hifitime::efmt::consts::ISO8601_DATE;
 use hifitime::prelude::Epoch;
 use hifitime::prelude::Formatter;
-use hifitime::efmt::consts::ISO8601_DATE;
 use jzon::JsonValue as JzonValue;
-use njord::keys::AutoIncrementPrimaryKey;
-use njord::sqlite;
 use crate::dbs::WeiboHotSearch;
 use crate::exceptions::WeiboError;
-use crate::prefs::WEIBO_DB_PTH;
 use crate::weibo_jzon_err;
 
+/// 获取最新热搜并插入数据库
+///
+/// ## 参数
+/// - `hotsearch_talk`：热搜列表，应是JSON格式
 pub fn attain_ajax_hotsearch(hotsearch_talk: &str) -> Result<(), WeiboError> {
   let mut hot_search_arrs = vec![];
   let hot_search_jquin = jzon::parse(&hotsearch_talk)?;
@@ -42,22 +43,13 @@ pub fn attain_ajax_hotsearch(hotsearch_talk: &str) -> Result<(), WeiboError> {
       .and_then(|val| val.as_str())
       .unwrap_or("");
 
-    hot_search_arrs.push(WeiboHotSearch {
-      id: AutoIncrementPrimaryKey::default(),
-      title: realtime_title.to_string(),
-      number: realtime_number,
-      special: realtime_special.to_string(),
-      occur_time: nub_era.to_string(),
-    })
+    hot_search_arrs.push(WeiboHotSearch::weibo_hot_search_c(
+      realtime_title.to_string(),
+      realtime_number,
+      realtime_special.to_string(),
+      nub_era.to_string())
+    );
   }
 
-  let weibo_db_pth = std::path::Path::new(WEIBO_DB_PTH);
-  let weibo_db_conn = sqlite::open(weibo_db_pth).map_err(|err| {
-    WeiboError::NjordError(err.to_string())
-  })?;
-  sqlite::insert(&weibo_db_conn, hot_search_arrs).map_err(|err| {
-    WeiboError::NjordError(err.to_string())
-  })?;
-
-  Ok(())
+  WeiboHotSearch::weibo_hot_search_u(hot_search_arrs)
 }
