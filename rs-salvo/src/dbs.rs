@@ -148,3 +148,35 @@ impl WeiboHotSearch {
     })
   }
 }
+
+
+/// 微博热门推荐
+#[derive(Debug, Table)]
+#[table_name = "weibo_hot_timeline"]
+pub struct WeiboHotTimeline {
+  pub id: AutoIncrementPrimaryKey<usize>,
+  pub mid: String,
+  pub text: String,
+  pub user_id: String,
+  pub user_name: String,
+}
+
+
+/// 微博评论
+#[derive(Debug, Table)]
+#[table_name = "weibo_comment"]
+pub struct WeiboComment {
+  pub id: AutoIncrementPrimaryKey<usize>,
+  pub mid: String,
+  pub text: String,
+  pub user_id: String,
+  pub user_name: String,
+  pub comment_era: String,
+  // 是否是评论回复
+  pub reply: bool,
+  // 如果是评论回复，存储其根评论的id
+  pub comment_senior_id: String,
+}
+
+
+// TODO: 替换Njord
