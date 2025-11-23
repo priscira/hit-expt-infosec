@@ -14,7 +14,7 @@ use crate::utils::attain_ajax_hotsearch;
 #[tokio::main]
 async fn main() {
   nyquest_preset::register();
-  let weibo_cli: AsyncClient =
+  let weibo_clt: AsyncClient =
     ClientBuilder::default().base_url("https://weibo.com")
       .user_agent("Mozilla/5.0 (X11; Linux x86_64) \
                    AppleWebKit/537.36 (KHTML, like Gecko) \
@@ -24,7 +24,7 @@ async fn main() {
       .await
       .expect("Failed to build client");
 
-  let hot_search: Result<String, WeiboError> = weibo::hot::gain_ajax_hotsearch(weibo_cli).await;
+  let hot_search: Result<String, WeiboError> = weibo::gain_ajax_hotsearch(weibo_clt).await;
   match hot_search {
     | Ok(talk) => {
       if let Err(err) = attain_ajax_hotsearch(&talk) {
