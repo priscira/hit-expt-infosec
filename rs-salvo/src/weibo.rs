@@ -4,7 +4,7 @@ use nyquest::r#async::Response;
 use crate::exceptions::WeiboError;
 
 pub async fn gain_side_hotsearch(weibo_clt: AsyncClient) -> Result<String, WeiboError> {
-  let gain_info = Request::get("/ajax/side/hotSearch");
+  let gain_info = Request::get("side/hotSearch");
   // let reap = weibo_clt.request(gain_info).await;
   // if let Err(reap_flaw) = reap {
   //   eprintln!("nyquest error: {:?}", reap_flaw);

@@ -15,7 +15,7 @@ use crate::utils::attain_ajax_hotsearch;
 async fn main() {
   nyquest_preset::register();
   let weibo_clt: AsyncClient =
-    ClientBuilder::default().base_url("https://weibo.com")
+    ClientBuilder::default().base_url("https://weibo.com/ajax/")
       .with_header("Referer", "https://weibo.com/newlogin")
       .user_agent("Mozilla/5.0 (X11; Linux x86_64) \
                    AppleWebKit/537.36 (KHTML, like Gecko) \
