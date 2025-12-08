@@ -1,11 +1,14 @@
 .priscira
 .lokalius
+**/activate.yash
 
 **/.idea/
 
 **/.venv/
 **/.pdm-python
 **/pdm.lock
+**/Pipfile
+**/Pipfile.lock
 **/.python-version
 **/.py[cod]
 **/__pycache__/

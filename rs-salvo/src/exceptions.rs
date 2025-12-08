@@ -33,14 +33,9 @@ impl From<jzon::Error> for WeiboError {
   }
 }
 
-impl From<njord::sqlite::SqliteError> for WeiboError {
-  fn from(err: njord::sqlite::SqliteError) -> Self {
-    match err {
-      njord::sqlite::SqliteError::InsertError(err) => WeiboError::NjordError(err.to_string()),
-      njord::sqlite::SqliteError::UpdateError(err) => WeiboError::NjordError(err.to_string()),
-      njord::sqlite::SqliteError::DeleteError(err) => WeiboError::NjordError(err.to_string()),
-      njord::sqlite::SqliteError::SelectError(err) => WeiboError::NjordError(err.to_string()),
-    }
+impl From<rbs::Error> for WeiboError {
+  fn from(err: rbs::Error) -> Self {
+    WeiboError::NjordError(err.to_string())
   }
 }
 

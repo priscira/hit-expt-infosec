@@ -10,7 +10,7 @@ use crate::weibo_jzon_err;
 ///
 /// ## 参数
 /// - `hotsearch_talk`：热搜列表，应是JSON格式
-pub fn attain_ajax_hotsearch(hotsearch_talk: &str) -> Result<(), WeiboError> {
+pub async fn attain_ajax_hotsearch(hotsearch_talk: &str) -> Result<(), WeiboError> {
   let mut hot_search_arrs = vec![];
   let hot_search_jquin = jzon::parse(&hotsearch_talk)?;
   let hot_search_data = hot_search_jquin.get("data")
@@ -51,5 +51,5 @@ pub fn attain_ajax_hotsearch(hotsearch_talk: &str) -> Result<(), WeiboError> {
     );
   }
 
-  WeiboHotSearch::weibo_hot_search_u(hot_search_arrs)
+  WeiboHotSearch::weibo_hot_search_u(hot_search_arrs).await
 }
