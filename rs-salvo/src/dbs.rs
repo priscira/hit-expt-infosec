@@ -162,6 +162,42 @@ impl WeiboHotTimeline {
     }
   }
 
+  /// 获取微博热门推荐WeiboHotTimeline对象
+  ///
+  /// ## 参数
+  /// - `timeline_mid`: 热门推荐的mid，可选
+  /// - `timeline_mem_id`: 热门推荐的发布者的编号，可选
+  /// - `timeline_mem_name`: 热门推荐的发布者的名称，可选
+  /// - `timeline_occur_era`: 热门推荐出现的时间，格式YYYY-MM-DD，可选
+  ///
+  /// ## 返回
+  /// 成功则返回符合查询条件的微博热门推荐数据
+  pub async fn weibo_hot_timeline_r(
+    timeline_mid: Option<String>, timeline_mem_id: Option<String>,
+    timeline_mem_name: Option<String>, timeline_occur_era: Option<String>)
+    -> Result<Vec<Self>, WeiboError> {
+    let weibo_db_rb_conn = RBatis::new();
+    weibo_db_rb_conn.link(SqliteDriver {}, WEIBO_DB_PTH).await?;
+
+    let mut weibo_hot_timeline_r_qry = rbs::value! {};
+    if let Some(timeline_mid) = timeline_mid {
+      weibo_hot_timeline_r_qry.insert(rbs::value!("mid"), rbs::value!(timeline_mid));
+    }
+    if let Some(timeline_mem_id) = timeline_mem_id {
+      weibo_hot_timeline_r_qry.insert(rbs::value!("mem_id"), rbs::value!(timeline_mem_id));
+    }
+    if let Some(timeline_mem_name) = timeline_mem_name {
+      weibo_hot_timeline_r_qry.insert(rbs::value!("mem_name"), rbs::value!(timeline_mem_name));
+    }
+    if let Some(timeline_occur_era) = timeline_occur_era {
+      weibo_hot_timeline_r_qry.insert(rbs::value!("occur_era"), rbs::value!(timeline_occur_era));
+    }
+
+    Self::select_by_map(&weibo_db_rb_conn, weibo_hot_timeline_r_qry).await.map_err(|flaw| {
+      WeiboError::RbatisError(flaw.to_string())
+    })
+  }
+
   /// 更新微博热门推荐WeiboHotTimeline数据，如果有相同的mid则更新；否则直接插入。
   ///
   /// ## 参数
@@ -201,6 +237,48 @@ impl WeiboHotTimeline {
     ).map_err(|flaw| {
       WeiboError::RbatisError(flaw.to_string())
     })
+  }
+
+
+  /// 删除微博热门推荐WeiboHotTimeline数据。
+  ///
+  /// ## 参数
+  /// - `no_sieve`: 无筛选条件，删除全部数据时的保证参数
+  /// - `timeline_mid`: 热门推荐的mid，可选
+  /// - `timeline_mem_id`: 热门推荐的发布者的编号，可选
+  /// - `timeline_mem_name`: 热门推荐的发布者的名称，可选
+  /// - `timeline_occur_era`: 热门推荐出现的年月日，格式YYYY-MM-DD，可选
+  pub async fn weibo_hot_timeline_d(
+    no_sieve: bool, timeline_mid: Option<String>, timeline_mem_id: Option<String>,
+    timeline_mem_name: Option<String>, timeline_occur_era: Option<String>)
+    -> Result<(), WeiboError> {
+    let weibo_db_rb_conn = RBatis::new();
+    weibo_db_rb_conn.link(SqliteDriver {}, WEIBO_DB_PTH).await?;
+
+    let mut weibo_hot_search_d_qry = rbs::value! {};
+
+    if let Some(timeline_mid) = timeline_mid {
+      weibo_hot_search_d_qry.insert(rbs::value!("mid"), rbs::value!(timeline_mid));
+    }
+    if let Some(timeline_mem_id) = timeline_mem_id {
+      weibo_hot_search_d_qry.insert(rbs::value!("mem_id"), rbs::value!(timeline_mem_id));
+    }
+    if let Some(timeline_mem_name) = timeline_mem_name {
+      weibo_hot_search_d_qry.insert(rbs::value!("mem_name"), rbs::value!(timeline_mem_name));
+    }
+    if let Some(timeline_occur_era) = timeline_occur_era {
+      weibo_hot_search_d_qry.insert(rbs::value!("occur_era"), rbs::value!(timeline_occur_era));
+    }
+    if weibo_hot_search_d_qry.is_empty() && !no_sieve {
+      return Err(WeiboError::RbatisError("delete all the data from the database, \
+                                         but no_sieve guarantee isn't provided.".to_string()));
+    }
+
+    Self::delete_by_map(&weibo_db_rb_conn, weibo_hot_search_d_qry).await.map(|_| ()).map_err(
+      |flaw| {
+        WeiboError::RbatisError(flaw.to_string())
+      }
+    )
   }
 }
 

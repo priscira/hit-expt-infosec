@@ -58,9 +58,7 @@ pub async fn attain_ajax_hotsearch(hotsearch_talk: &str) -> Result<(), WeiboErro
 
 pub async fn attain_ajax_hottimeline(hottimeline_talk: &str) -> Result<(), WeiboError> {
   let mut hot_timeline_arrs = vec![];
-  println!("开始JSON解析");
   let hot_timeline_jquin = jzon::parse(&hottimeline_talk)?;
-  println!("结束JSON解析");
   let hot_timeline_statuses = hot_timeline_jquin.get("statuses")
     .ok_or_else(|| weibo_jzon_err!("/ajax/feed/hottimeline no field statuses"))?;
   let hot_timeline_status_arrs: &Vec<JzonValue> = hot_timeline_statuses.as_array()
@@ -91,7 +89,6 @@ pub async fn attain_ajax_hottimeline(hottimeline_talk: &str) -> Result<(), Weibo
     let timeline_era = match hot_timeline_status_arri.get("created_at").and_then(|val| val.as_str()
     ) {
       Some(era_talk) => {
-        println!("时间: {:?}", &era_talk.replace("+8000 ", ""));
         let occ_era = Epoch::from_format_str(
           &era_talk.replace("+0800 ", ""), "%a %b %d %H:%M:%S %Y")?;
         Formatter::new(occ_era, ISO8601_DATE).to_string()
@@ -110,11 +107,6 @@ pub async fn attain_ajax_hottimeline(hottimeline_talk: &str) -> Result<(), Weibo
       timeline_mem_name.to_string(),
       timeline_era,
     ));
-  }
-  println!("=========");
-  for hot_timeline_arri in hot_timeline_arrs.iter() {
-    println!("{:?}", hot_timeline_arri);
-    println!("=========");
   }
 
   WeiboHotTimeline::weibo_hot_timeline_u(hot_timeline_arrs).await

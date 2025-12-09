@@ -46,6 +46,5 @@ pub async fn gain_feed_hottimeline(weibo_clt: &AsyncClient) -> Result<String, We
                                          reap.status().code())));
   }
   let reap_talks = reap.text().await?;
-  println!("## reap_talks: {}", reap_talks);
   Ok(reap_talks)
 }
