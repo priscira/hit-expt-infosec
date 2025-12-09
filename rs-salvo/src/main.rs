@@ -9,7 +9,7 @@ mod wm;
 use nyquest::ClientBuilder;
 use nyquest::AsyncClient;
 use crate::exceptions::WeiboError;
-use crate::utils::attain_ajax_hotsearch;
+use crate::utils::{attain_ajax_hotsearch, attain_ajax_hottimeline};
 
 #[tokio::main]
 async fn main() {
@@ -25,10 +25,11 @@ async fn main() {
       .await
       .expect("Failed to build client");
 
-  let hot_search: Result<String, WeiboError> = weibo::gain_side_hotsearch(weibo_clt).await;
-  match hot_search {
+  let hot_search: Result<String, WeiboError> = weibo::gain_side_hotsearch(&weibo_clt).await;
+  let hot_timeline: Result<String, WeiboError> = weibo::gain_feed_hottimeline(&weibo_clt).await;
+  match hot_timeline {
     | Ok(talk) => {
-      if let Err(err) = attain_ajax_hotsearch(&talk).await {
+      if let Err(err) = attain_ajax_hottimeline(&talk).await {
         println!("失败: {}", err);
       } else {
         println!("成功");

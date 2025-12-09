@@ -5,7 +5,6 @@ use serde::Serialize;
 use crate::exceptions::WeiboError;
 use crate::prefs::WEIBO_DB_PTH;
 
-
 /// 微博热搜
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct WeiboHotSearch {
@@ -20,7 +19,6 @@ pub struct WeiboHotSearch {
   pub occur_era: String,
 }
 rbatis::crud!(WeiboHotSearch {}, "weibo_hot_search");
-
 
 impl WeiboHotSearch {
   /// 创建一个微博热搜WeiboHotSearch对象
@@ -64,7 +62,7 @@ impl WeiboHotSearch {
     }
 
     Self::select_by_map(&weibo_db_rb_conn, weibo_hot_search_r_qry).await.map_err(|flaw| {
-      WeiboError::NjordError(flaw.to_string())
+      WeiboError::RbatisError(flaw.to_string())
     })
   }
 
@@ -96,7 +94,7 @@ impl WeiboHotSearch {
 
     weibo_db_rb_conn.exec(&weibo_hot_search_sent, weibo_hot_search_pars).await.map(|_| ()
     ).map_err(|flaw| {
-      WeiboError::NjordError(flaw.to_string())
+      WeiboError::RbatisError(flaw.to_string())
     })
   }
 
@@ -115,31 +113,108 @@ impl WeiboHotSearch {
     if let Some(occur_era) = occur_era {
       weibo_hot_search_d_qry.insert(rbs::value!("occur_era"), rbs::value!(occur_era));
     } else if !no_sieve {
-      return Err(WeiboError::NjordError("delete all the data from the database, \
+      return Err(WeiboError::RbatisError("delete all the data from the database, \
                                          but no_sieve guarantee isn't provided.".to_string()));
     }
 
     Self::delete_by_map(&weibo_db_rb_conn, weibo_hot_search_d_qry).await.map(|_| ()).map_err(
       |flaw| {
-        WeiboError::NjordError(flaw.to_string())
+        WeiboError::RbatisError(flaw.to_string())
       }
     )
   }
 }
 
+/// 微博热门推荐
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct WeiboHotTimeline {
+  pub id: Option<usize>,
+  pub mid: String,
+  pub mblogid: String,
+  pub text: String,
+  pub mem_id: String,
+  pub mem_name: String,
+  pub occur_era: String,
+}
+rbatis::crud!(WeiboHotTimeline {}, "weibo_hot_timeline");
 
-// /// 微博热门推荐
-// #[derive(Debug, Table)]
-// #[table_name = "weibo_hot_timeline"]
-// pub struct WeiboHotTimeline {
-//   pub id: AutoIncrementPrimaryKey<usize>,
-//   pub mid: String,
-//   pub text: String,
-//   pub user_id: String,
-//   pub user_name: String,
-// }
-//
-//
+impl WeiboHotTimeline {
+  /// 创建一个微博热门推荐WeiboHotTimeline对象
+  ///
+  /// ## 参数
+  /// - `timeline_mid`: 热门推荐的mid
+  /// - `timeline_mblogid`: 热门推荐的mblogid
+  /// - `timeline_text`: 热门推荐的内容
+  /// - `timeline_mem_id`: 热门推荐的发布者的编号
+  /// - `timeline_mem_name`: 热门推荐的发布者的名称
+  /// - `timeline_occur_era`: 热门推荐出现的时间，格式为YYYY-MM-DD
+  pub fn weibo_hot_timeline_c(timeline_mid: String, timeline_mblogid: String, timeline_text: String,
+                              timeline_mem_id: String, timeline_mem_name: String,
+                              timeline_occur_era: String) -> Self {
+    Self {
+      id: None,
+      mid: timeline_mid,
+      mblogid: timeline_mblogid,
+      text: timeline_text,
+      mem_id: timeline_mem_id,
+      mem_name: timeline_mem_name,
+      occur_era: timeline_occur_era,
+    }
+  }
+
+  /// 更新微博热门推荐WeiboHotTimeline数据，如果有相同的mid则更新；否则直接插入。
+  ///
+  /// ## 参数
+  /// - `hot_timeline_arrs`: 新的微博热搜数据
+  pub async fn weibo_hot_timeline_u(hot_timeline_arrs: Vec<Self>)
+                                    -> Result<(), WeiboError> {
+    if hot_timeline_arrs.is_empty() {
+      return Ok(());
+    }
+
+    let weibo_db_rb_conn = RBatis::new();
+    weibo_db_rb_conn.link(SqliteDriver {}, WEIBO_DB_PTH).await?;
+
+    let mut weibo_hot_timeline_ques = vec![];
+    let mut weibo_hot_timeline_pars = vec![];
+    for hot_timeline_arri in hot_timeline_arrs.iter() {
+      weibo_hot_timeline_ques.push("(?, ?, ?, ?, ?, ?)");
+      weibo_hot_timeline_pars.push(rbs::value!(hot_timeline_arri.mid.clone()));
+      weibo_hot_timeline_pars.push(rbs::value!(hot_timeline_arri.mblogid.clone()));
+      weibo_hot_timeline_pars.push(rbs::value!(hot_timeline_arri.text.clone()));
+      weibo_hot_timeline_pars.push(rbs::value!(hot_timeline_arri.mem_id.clone()));
+      weibo_hot_timeline_pars.push(rbs::value!(hot_timeline_arri.mem_name.clone()));
+      weibo_hot_timeline_pars.push(rbs::value!(hot_timeline_arri.occur_era.clone()));
+    }
+
+    let weibo_hot_search_sent = format!(
+      "insert into weibo_hot_timeline (mid, mblogid, text, mem_id, mem_name, occur_era) \
+       values {} \
+       on conflict(mid) do update set \
+         mblogid = excluded.mblogid, \
+         text = excluded.text, \
+         mem_name = excluded.mem_name, \
+         occur_era = excluded.occur_era",
+      weibo_hot_timeline_ques.join(", "));
+
+    weibo_db_rb_conn.exec(&weibo_hot_search_sent, weibo_hot_timeline_pars).await.map(|_| ()
+    ).map_err(|flaw| {
+      WeiboError::RbatisError(flaw.to_string())
+    })
+  }
+}
+
+/// 微博热门推荐的图片
+#[derive(Clone, Debug, Deserialize, Serialize)]
+struct WeiboHotTimelinePic {
+  pub id: Option<usize>,
+  pub mid: String,
+  pub pic_id: String,
+  pub pic_url: String,
+  pub pic_ctn: String,
+}
+rbatis::crud!(WeiboHotTimelinePic {}, "weibo_hot_timeline_pic");
+
 // /// 微博评论
 // #[derive(Debug, Table)]
 // #[table_name = "weibo_comment"]

@@ -6,7 +6,7 @@ use std::fmt::Debug;
 pub enum WeiboError {
   NyquestError(String),
   JzonError(String),
-  NjordError(String),
+  RbatisError(String),
 }
 
 impl fmt::Display for WeiboError {
@@ -14,7 +14,7 @@ impl fmt::Display for WeiboError {
     match self {
       WeiboError::NyquestError(err) => write!(f, "NyquestError: {}", err),
       WeiboError::JzonError(err) => write!(f, "JzonError: {}", err),
-      WeiboError::NjordError(err) => write!(f, "NjordError: {}", err),
+      WeiboError::RbatisError(err) => write!(f, "NjordError: {}", err),
     }
   }
 }
@@ -35,7 +35,13 @@ impl From<jzon::Error> for WeiboError {
 
 impl From<rbs::Error> for WeiboError {
   fn from(err: rbs::Error) -> Self {
-    WeiboError::NjordError(err.to_string())
+    WeiboError::RbatisError(err.to_string())
+  }
+}
+
+impl From<hifitime::HifitimeError> for WeiboError {
+  fn from(err: hifitime::HifitimeError) -> Self {
+    WeiboError::JzonError(err.to_string())
   }
 }
 
