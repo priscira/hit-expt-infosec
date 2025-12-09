@@ -4,6 +4,8 @@
 
 **/.idea/
 
+rs-salvo/weibo.db*
+
 **/.venv/
 **/.pdm-python
 **/pdm.lock
