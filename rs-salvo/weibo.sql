@@ -6,3 +6,14 @@ CREATE TABLE IF NOT EXISTS weibo_hot_search
  special TEXT NOT NULL DEFAULT '',
  occur_era TEXT NOT NULL CHECK (occur_era GLOB '????-??-??'),
  UNIQUE (title, occur_era));
+
+-- 创建表格weibo_hot_timeline
+CREATE TABLE IF NOT EXISTS weibo_hot_timeline
+(id INTEGER PRIMARY KEY AUTOINCREMENT,
+ mid TEXT NOT NULL,
+ mblogid TEXT NOT NULL,
+ text TEXT NOT NULL,
+ mem_id TEXT NOT NULL,
+ mem_name TEXT NOT NULL,
+ occur_era TEXT NOT NULL CHECK (occur_era GLOB '????-??-??'),
+ UNIQUE (mid));
