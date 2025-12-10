@@ -8,8 +8,9 @@ mod wm;
 
 use nyquest::ClientBuilder;
 use nyquest::AsyncClient;
-use crate::exceptions::WeiboError;
 use crate::utils::{attain_ajax_hotsearch, attain_ajax_hottimeline};
+use crate::weibo::gain_sinaimg;
+// TODO: 修改weibo的cookie
 
 #[tokio::main]
 async fn main() {
@@ -24,17 +25,11 @@ async fn main() {
       .build_async()
       .await
       .expect("Failed to build client");
-
-  let hot_search: Result<String, WeiboError> = weibo::gain_side_hotsearch(&weibo_clt).await;
-  let hot_timeline: Result<String, WeiboError> = weibo::gain_feed_hottimeline(&weibo_clt).await;
-  match hot_timeline {
-    | Ok(talk) => {
-      if let Err(err) = attain_ajax_hottimeline(&talk).await {
-        println!("失败: {}", err);
-      } else {
-        println!("成功");
-      }
-    }
-    | Err(e) => println!("失败: {}", e)
-  };
+  gain_sinaimg(&weibo_clt, "https://wx2.sinaimg.cn/orj360/79510c8bgy1i85kbqe8v3j222e35ekgp.jpg").await.unwrap();
+  // match attain_ajax_hottimeline(&weibo_clt, false).await {
+  //   | Ok(_) => {
+  //     println!("成功");
+  //   }
+  //   | Err(flaw) => println!("失败: {}", flaw)
+  // };
 }

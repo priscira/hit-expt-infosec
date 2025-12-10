@@ -207,7 +207,7 @@ impl WeiboHotTimeline {
   /// 更新微博热门推荐WeiboHotTimeline数据，如果有相同的mid则更新；否则直接插入。
   ///
   /// ## 参数
-  /// - `hot_timeline_arrs`: 新的微博热搜数据
+  /// - `hot_timeline_arrs`: 新的微博热门推荐数据
   pub async fn weibo_hot_timeline_u(hot_timeline_arrs: Vec<Self>)
                                     -> Result<(), WeiboError> {
     if hot_timeline_arrs.is_empty() {
@@ -245,7 +245,6 @@ impl WeiboHotTimeline {
     })
   }
 
-
   /// 删除微博热门推荐WeiboHotTimeline数据。
   ///
   /// ## 参数
@@ -261,26 +260,26 @@ impl WeiboHotTimeline {
     let weibo_db_rb_conn = RBatis::new();
     weibo_db_rb_conn.link(SqliteDriver {}, WEIBO_DB_PTH).await?;
 
-    let mut weibo_hot_search_d_qry = rbs::value! {};
+    let mut weibo_hot_timeline_d_qry = rbs::value! {};
 
     if let Some(timeline_mid) = timeline_mid {
-      weibo_hot_search_d_qry.insert(rbs::value!("mid"), rbs::value!(timeline_mid));
+      weibo_hot_timeline_d_qry.insert(rbs::value!("mid"), rbs::value!(timeline_mid));
     }
     if let Some(timeline_mem_id) = timeline_mem_id {
-      weibo_hot_search_d_qry.insert(rbs::value!("mem_id"), rbs::value!(timeline_mem_id));
+      weibo_hot_timeline_d_qry.insert(rbs::value!("mem_id"), rbs::value!(timeline_mem_id));
     }
     if let Some(timeline_mem_name) = timeline_mem_name {
-      weibo_hot_search_d_qry.insert(rbs::value!("mem_name"), rbs::value!(timeline_mem_name));
+      weibo_hot_timeline_d_qry.insert(rbs::value!("mem_name"), rbs::value!(timeline_mem_name));
     }
     if let Some(timeline_occur_era) = timeline_occur_era {
-      weibo_hot_search_d_qry.insert(rbs::value!("occur_era"), rbs::value!(timeline_occur_era));
+      weibo_hot_timeline_d_qry.insert(rbs::value!("occur_era"), rbs::value!(timeline_occur_era));
     }
-    if weibo_hot_search_d_qry.is_empty() && !no_sieve {
+    if weibo_hot_timeline_d_qry.is_empty() && !no_sieve {
       return Err(WeiboError::RbatisError("delete all the data from the database, \
                                          but no_sieve guarantee isn't provided.".to_string()));
     }
 
-    Self::delete_by_map(&weibo_db_rb_conn, weibo_hot_search_d_qry).await.map(|_| ()).map_err(
+    Self::delete_by_map(&weibo_db_rb_conn, weibo_hot_timeline_d_qry).await.map(|_| ()).map_err(
       |flaw| {
         WeiboError::RbatisError(flaw.to_string())
       }
@@ -290,14 +289,101 @@ impl WeiboHotTimeline {
 
 /// 微博热门推荐的图片
 #[derive(Clone, Debug, Deserialize, Serialize)]
-struct WeiboHotTimelinePic {
+pub struct WeiboHotTimelinePic {
   pub id: Option<usize>,
+  // 图片所属的热门推荐的mid
   pub mid: String,
+  // 图片id
   pub pic_id: String,
+  // 图片url
   pub pic_url: String,
-  pub pic_ctn: String,
 }
 rbatis::crud!(WeiboHotTimelinePic {}, "weibo_hot_timeline_pic");
+
+impl WeiboHotTimelinePic {
+  /// 创建一个微博热门推荐图片WeiboHotTimelinePic对象
+  ///
+  /// ## 参数
+  /// - `timeline_mid`: 图片所属的热门推荐的mid
+  /// - `timeline_pic_id`: 图片id
+  /// - `timeline_pic_url`: 图片url
+  pub fn weibo_hot_timeline_pic_c(timeline_mid: String, timeline_pic_id: String,
+                                  timeline_pic_url: String) -> Self {
+    Self {
+      id: None,
+      mid: timeline_mid,
+      pic_id: timeline_pic_id,
+      pic_url: timeline_pic_url,
+    }
+  }
+
+  /// 获取微博热门推荐图片WeiboHotTimelinePic对象
+  ///
+  /// ## 参数
+  /// - `timeline_mid`: 热门推荐的mid，可选
+  ///
+  /// ## 返回
+  /// 成功则返回符合查询条件的微博热门推荐图片数据
+  pub async fn weibo_hot_timeline_pic_r(timeline_mid: Option<String>) -> Result<Vec<Self>, WeiboError> {
+    let weibo_db_rb_conn = RBatis::new();
+    weibo_db_rb_conn.link(SqliteDriver {}, WEIBO_DB_PTH).await?;
+
+    let mut weibo_hot_timeline_pic_r_qry = rbs::value! {};
+    if let Some(timeline_mid) = timeline_mid {
+      weibo_hot_timeline_pic_r_qry.insert(rbs::value!("mid"), rbs::value!(timeline_mid));
+    }
+
+    Self::select_by_map(&weibo_db_rb_conn, weibo_hot_timeline_pic_r_qry).await.map_err(|flaw| {
+      WeiboError::RbatisError(flaw.to_string())
+    })
+  }
+
+  /// 更新微博热门推荐图片WeiboHotTimelinePic数据
+  ///
+  /// ## 参数
+  /// - `hot_timeline_pic_arrs`: 新的微博热门推荐图片数据
+  pub async fn weibo_hot_timeline_pic_u(hot_timeline_pic_arrs: Vec<Self>)
+                                        -> Result<(), WeiboError> {
+    if hot_timeline_pic_arrs.is_empty() {
+      return Ok(());
+    }
+
+    let weibo_db_rb_conn = RBatis::new();
+    weibo_db_rb_conn.link(SqliteDriver {}, WEIBO_DB_PTH).await?;
+
+    Self::insert_batch(&weibo_db_rb_conn, &hot_timeline_pic_arrs, 10).await.map(|_| ()).map_err(
+      |flaw| {
+        WeiboError::RbatisError(flaw.to_string())
+      }
+    )
+  }
+
+  /// 删除微博热门推荐图片WeiboHotTimelinePic数据
+  ///
+  /// ## 参数
+  /// - `no_sieve`: 无筛选条件，删除全部数据时的保证参数
+  /// - `timeline_mid`: 热门推荐的mid，可选、
+  pub async fn weibo_hot_timeline_pic_d(no_sieve: bool, timeline_mid: Option<String>)
+                                        -> Result<(), WeiboError> {
+    let weibo_db_rb_conn = RBatis::new();
+    weibo_db_rb_conn.link(SqliteDriver {}, WEIBO_DB_PTH).await?;
+
+    let mut weibo_hot_timeline_pic_d_qry = rbs::value! {};
+
+    if let Some(timeline_mid) = timeline_mid {
+      weibo_hot_timeline_pic_d_qry.insert(rbs::value!("mid"), rbs::value!(timeline_mid));
+    } else if !no_sieve {
+      return Err(WeiboError::RbatisError("delete all the data from the database, \
+                                         but no_sieve guarantee isn't provided.".to_string()));
+    }
+
+    Self::delete_by_map(&weibo_db_rb_conn, weibo_hot_timeline_pic_d_qry).await.map(|_| ()).map_err(
+      |flaw| {
+        WeiboError::RbatisError(flaw.to_string())
+      }
+    )
+  }
+}
 
 // /// 微博评论
 // #[derive(Debug, Table)]
@@ -314,6 +400,3 @@ rbatis::crud!(WeiboHotTimelinePic {}, "weibo_hot_timeline_pic");
 //   // 如果是评论回复，存储其根评论的id
 //   pub comment_senior_id: String,
 // }
-//
-//
-// // TODO: 替换Njord

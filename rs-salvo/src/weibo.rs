@@ -3,6 +3,7 @@ use nyquest::r#async::Request;
 use nyquest::r#async::Response;
 use crate::exceptions::WeiboError;
 
+/// 访问链接获取微博热搜
 pub async fn gain_side_hotsearch(weibo_clt: &AsyncClient) -> Result<String, WeiboError> {
   let gain_info = Request::get("side/hotSearch");
   // let reap = weibo_clt.request(gain_info).await;
@@ -20,6 +21,7 @@ pub async fn gain_side_hotsearch(weibo_clt: &AsyncClient) -> Result<String, Weib
   Ok(reap_talks)
 }
 
+/// 访问链接获取微博热门推荐
 pub async fn gain_feed_hottimeline(weibo_clt: &AsyncClient) -> Result<String, WeiboError> {
   let gain_info = Request::get("https://weibo.com/ajax/feed/hottimeline?\
                                 since_id=0&refresh=0&group_id=102803&containerid=102803&\
@@ -33,4 +35,16 @@ pub async fn gain_feed_hottimeline(weibo_clt: &AsyncClient) -> Result<String, We
   }
   let reap_talks = reap.text().await?;
   Ok(reap_talks)
+}
+
+/// 访问链接获取微博图片
+pub async fn gain_sinaimg(weibo_clt: &AsyncClient, pic_url: &str) -> Result<Vec<u8>, WeiboError> {
+  let gain_info = Request::get(pic_url.to_string());
+  let reap: Response = weibo_clt.request(gain_info).await?;
+  if !reap.status().is_successful() {
+    return Err(WeiboError::NyquestError(format!("{} status code is {}",
+                                                pic_url, reap.status().code())));
+  }
+  let reap_byt: Vec<u8> = reap.bytes().await?;
+  Ok(reap_byt)
 }
