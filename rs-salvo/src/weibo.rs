@@ -20,7 +20,6 @@ pub async fn gain_side_hotsearch(weibo_clt: &AsyncClient) -> Result<String, Weib
   Ok(reap_talks)
 }
 
-
 pub async fn gain_feed_hottimeline(weibo_clt: &AsyncClient) -> Result<String, WeiboError> {
   let gain_info = Request::get("https://weibo.com/ajax/feed/hottimeline?since_id=0&refresh=0&group_id=102803&containerid=102803&extparam=discover%7Cnew_feed&max_id=0&count=10")
     .with_header("x-xsrf-token", "QqDpWsqwA9Prqs7Os_NYw1st")

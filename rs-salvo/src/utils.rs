@@ -86,17 +86,18 @@ pub async fn attain_ajax_hottimeline(hottimeline_talk: &str) -> Result<(), Weibo
     let timeline_mem_name = timeline_mem.get("screen_name").and_then(|val| val.as_str()
     ).unwrap_or("");
 
-    let timeline_era = match hot_timeline_status_arri.get("created_at").and_then(|val| val.as_str()
-    ) {
-      Some(era_talk) => {
-        let occ_era = Epoch::from_format_str(
-          &era_talk.replace("+0800 ", ""), "%a %b %d %H:%M:%S %Y")?;
-        Formatter::new(occ_era, ISO8601_DATE).to_string()
-      }
-      None => {
-        let nub_era = Epoch::now()?;
-        Formatter::new(nub_era, ISO8601_DATE).to_string()
-      }
+    let timeline_era = hot_timeline_status_arri.get("created_at").and_then(|v| v.as_str()).
+      and_then(|era_talk| {
+        Epoch::from_format_str(&era_talk.replace("+0800 ", ""), "%a %b %d %H:%M:%S %Y").
+          map(|era_val| Formatter::new(era_val, ISO8601_DATE).to_string()).ok()
+      }).
+      or_else(|| {
+        Epoch::now().map(|era_val| Formatter::new(era_val, ISO8601_DATE).to_string()).ok()
+      });
+    let timeline_era = if let Some(timeline_era) = timeline_era {
+      timeline_era
+    } else {
+      continue;
     };
 
     hot_timeline_arrs.push(WeiboHotTimeline::weibo_hot_timeline_c(
