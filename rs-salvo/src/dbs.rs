@@ -129,11 +129,17 @@ impl WeiboHotSearch {
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct WeiboHotTimeline {
   pub id: Option<usize>,
+  // 热门推荐的mid
   pub mid: String,
+  // 热门推荐的mblogid
   pub mblogid: String,
+  // 热门推荐的内容
   pub text: String,
+  // 热门推荐的发布者的编号
   pub mem_id: String,
+  // 热门推荐的发布者的名称
   pub mem_name: String,
+  // 热门推荐出现的时间，格式为YYYY-MM-DD
   pub occur_era: String,
 }
 rbatis::crud!(WeiboHotTimeline {}, "weibo_hot_timeline");
