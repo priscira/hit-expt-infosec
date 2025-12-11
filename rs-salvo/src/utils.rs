@@ -1,5 +1,4 @@
 use std::fs;
-use std::path::Path;
 use hifitime::efmt::consts::ISO8601_DATE;
 use hifitime::prelude::Epoch;
 use hifitime::prelude::Formatter;
@@ -74,6 +73,7 @@ pub async fn attain_ajax_hottimeline(weibo_clt: &AsyncClient, pic: bool) -> Resu
   let hottimeline_talk: String = weibo::gain_feed_hottimeline(&weibo_clt).await?;
 
   let mut hot_timeline_arrs = vec![];
+  let mut hot_timeline_pic_arrs = vec![];
   let hot_timeline_jquin = jzon::parse(&hottimeline_talk)?;
   let hot_timeline_statuses = hot_timeline_jquin.get("statuses")
     .ok_or_else(|| weibo_jzon_err!("/ajax/feed/hottimeline no field statuses"))?;
@@ -100,8 +100,8 @@ pub async fn attain_ajax_hottimeline(weibo_clt: &AsyncClient, pic: bool) -> Resu
       let timeline_pic_infos: Option<&JsonValue> = hot_timeline_status_arri.get("pic_infos");
       let timeline_mix_media_infos: Option<&JsonValue> =
         hot_timeline_status_arri.get("mix_media_info");
-      attain_sinaimg_hot_timeline(
-        &weibo_clt, timeline_mid, timeline_pic_infos, timeline_mix_media_infos).await?;
+      hot_timeline_pic_arrs.extend(attain_sinaimg_hot_timeline(
+        &weibo_clt, timeline_mid, timeline_pic_infos, timeline_mix_media_infos).await?);
     }
 
     let timeline_text = hot_timeline_status_arri.get("text_raw").and_then(
@@ -134,7 +134,10 @@ pub async fn attain_ajax_hottimeline(weibo_clt: &AsyncClient, pic: bool) -> Resu
     ));
   }
 
-  // WeiboHotTimeline::weibo_hot_timeline_u(hot_timeline_arrs).await
+  WeiboHotTimeline::weibo_hot_timeline_u(hot_timeline_arrs).await?;
+  if pic {
+    WeiboHotTimelinePic::weibo_hot_timeline_pic_u(hot_timeline_pic_arrs).await?;
+  }
   Ok(())
 }
 
