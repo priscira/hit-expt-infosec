@@ -5,6 +5,7 @@
 **/.idea/
 
 rs-salvo/weibo.db*
+**/target/
 
 **/.venv/
 **/.pdm-python
@@ -21,4 +22,4 @@ rs-salvo/weibo.db*
 
 **/*.db
 **/*.sqlite
-**/target/
+**/weibo_hot_timeline_pics/*

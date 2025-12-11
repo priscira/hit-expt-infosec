@@ -1,3 +1,5 @@
+use std::fs;
+use std::path::Path;
 use hifitime::efmt::consts::ISO8601_DATE;
 use hifitime::prelude::Epoch;
 use hifitime::prelude::Formatter;
@@ -7,6 +9,7 @@ use crate::dbs::WeiboHotSearch;
 use crate::dbs::WeiboHotTimeline;
 use crate::dbs::WeiboHotTimelinePic;
 use crate::exceptions::WeiboError;
+use crate::prefs::WEIBO_HOT_TIMELINE_PICS_PTH;
 use crate::weibo;
 use crate::weibo_jzon_err;
 
@@ -97,12 +100,8 @@ pub async fn attain_ajax_hottimeline(weibo_clt: &AsyncClient, pic: bool) -> Resu
       let timeline_pic_infos: Option<&JsonValue> = hot_timeline_status_arri.get("pic_infos");
       let timeline_mix_media_infos: Option<&JsonValue> =
         hot_timeline_status_arri.get("mix_media_info");
-      let timeline_pics: Vec<WeiboHotTimelinePic> = attain_sinaimg_hot_timeline(
+      attain_sinaimg_hot_timeline(
         &weibo_clt, timeline_mid, timeline_pic_infos, timeline_mix_media_infos).await?;
-
-      for timeline_pici in timeline_pics {
-        println!("==========\n{:?}", timeline_pici);
-      }
     }
 
     let timeline_text = hot_timeline_status_arri.get("text_raw").and_then(
@@ -139,17 +138,45 @@ pub async fn attain_ajax_hottimeline(weibo_clt: &AsyncClient, pic: bool) -> Resu
   Ok(())
 }
 
-pub async fn attain_sinaimg_hot_timeline(weibo_clt: &AsyncClient,
-                                         timeline_mid: &str,
-                                         timeline_pic_infos: Option<&JsonValue>,
-                                         timeline_mix_media_infos: Option<&JsonValue>,
+async fn attain_sinaimg_hot_timeline(weibo_clt: &AsyncClient,
+                                     timeline_mid: &str, timeline_pic_infos: Option<&JsonValue>,
+                                     timeline_mix_media_infos: Option<&JsonValue>,
+) -> Result<(), WeiboError> {
+  let mut pic_arrs: Vec<WeiboHotTimelinePic> = vec![];
+  let hot_timeline_pic_arrs = anly_hot_timeline_4pic(
+    timeline_mid, timeline_pic_infos, timeline_mix_media_infos)?;
+  for hot_timeline_pic_arri in hot_timeline_pic_arrs {
+    // 存储到本地的图片文件路径
+    let pic_pth = format!("{}/{}-{}.jpg",
+                          WEIBO_HOT_TIMELINE_PICS_PTH,
+                          &hot_timeline_pic_arri.mid, &hot_timeline_pic_arri.pic_id);
+    let timeline_pic_ctn = weibo::gain_sinaimg(&weibo_clt, &hot_timeline_pic_arri.pic_url).await?;
+    // 将图片存储到本地
+    if fs::write(&pic_pth, timeline_pic_ctn).is_err() {
+      continue;
+    }
+    pic_arrs.push(hot_timeline_pic_arri);
+  }
+  for pic_arri in pic_arrs {
+    println!("==========");
+    println!("{:?}", pic_arri);
+  }
+  Ok(())
+}
+
+fn anly_hot_timeline_4pic(timeline_mid: &str, timeline_pic_infos: Option<&JsonValue>,
+                          timeline_mix_media_infos: Option<&JsonValue>,
 ) -> Result<Vec<WeiboHotTimelinePic>, WeiboError> {
   // 从pic_infos中获取图片信息，包括url和pic_id
   let anly_pic_info_large = |pic_info_large: Option<&JsonValue>| {
     pic_info_large.and_then(|pic_info_large| pic_info_large.as_object()).
       and_then(|pic_info_large| {
         let pic_info_large_url = pic_info_large.get("url").and_then(|v| v.as_str())?;
-        Some(pic_info_large_url.to_string())
+        if pic_info_large_url.starts_with("http") {
+          Some(pic_info_large_url.to_string())
+        } else {
+          None
+        }
       })
   };
 
