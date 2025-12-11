@@ -25,11 +25,11 @@ async fn main() {
       .build_async()
       .await
       .expect("Failed to build client");
-  gain_sinaimg(&weibo_clt, "https://wx2.sinaimg.cn/orj360/79510c8bgy1i85kbqe8v3j222e35ekgp.jpg").await.unwrap();
-  // match attain_ajax_hottimeline(&weibo_clt, false).await {
-  //   | Ok(_) => {
-  //     println!("成功");
-  //   }
-  //   | Err(flaw) => println!("失败: {}", flaw)
-  // };
+  // gain_sinaimg(&weibo_clt, "https://wx2.sinaimg.cn/orj360/79510c8bgy1i85kbqe8v3j222e35ekgp.jpg").await.unwrap();
+  match attain_ajax_hottimeline(&weibo_clt, true).await {
+    | Ok(_) => {
+      println!("成功");
+    }
+    | Err(flaw) => println!("失败: {}", flaw)
+  };
 }

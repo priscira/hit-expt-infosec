@@ -68,7 +68,7 @@ pub async fn attain_ajax_hotsearch(weibo_clt: &AsyncClient) -> Result<(), WeiboE
 /// - `pic`：是否需要爬取图片
 pub async fn attain_ajax_hottimeline(weibo_clt: &AsyncClient, pic: bool) -> Result<(), WeiboError> {
   // 热门推荐列表，应是JSON格式
-  let hottimeline_talk: String = weibo::gain_side_hotsearch(&weibo_clt).await?;
+  let hottimeline_talk: String = weibo::gain_feed_hottimeline(&weibo_clt).await?;
 
   let mut hot_timeline_arrs = vec![];
   let hot_timeline_jquin = jzon::parse(&hottimeline_talk)?;
@@ -79,12 +79,6 @@ pub async fn attain_ajax_hottimeline(weibo_clt: &AsyncClient, pic: bool) -> Resu
       || weibo_jzon_err!("/ajax/feed/hottimeline statuses is not array"))?;
 
   for hot_timeline_status_arri in hot_timeline_status_arrs.iter() {
-    // 判断是否是广告
-    if let Some(true) = hot_timeline_status_arri.get("isAd").and_then(|val| val.as_bool()) {
-      println!("== 广告: {}", hot_timeline_status_arri);
-      continue;
-    }
-
     let Some(timeline_mid) = hot_timeline_status_arri.get("mid").and_then(|val| val.as_str()) else {
       continue
     };
@@ -103,6 +97,12 @@ pub async fn attain_ajax_hottimeline(weibo_clt: &AsyncClient, pic: bool) -> Resu
       let timeline_pic_infos: Option<&JsonValue> = hot_timeline_status_arri.get("pic_infos");
       let timeline_mix_media_infos: Option<&JsonValue> =
         hot_timeline_status_arri.get("mix_media_info");
+      let timeline_pics: Vec<WeiboHotTimelinePic> = attain_sinaimg_hot_timeline(
+        &weibo_clt, timeline_mid, timeline_pic_infos, timeline_mix_media_infos).await?;
+
+      for timeline_pici in timeline_pics {
+        println!("==========\n{:?}", timeline_pici);
+      }
     }
 
     let timeline_text = hot_timeline_status_arri.get("text_raw").and_then(
@@ -135,7 +135,8 @@ pub async fn attain_ajax_hottimeline(weibo_clt: &AsyncClient, pic: bool) -> Resu
     ));
   }
 
-  WeiboHotTimeline::weibo_hot_timeline_u(hot_timeline_arrs).await
+  // WeiboHotTimeline::weibo_hot_timeline_u(hot_timeline_arrs).await
+  Ok(())
 }
 
 pub async fn attain_sinaimg_hot_timeline(weibo_clt: &AsyncClient,
@@ -148,8 +149,7 @@ pub async fn attain_sinaimg_hot_timeline(weibo_clt: &AsyncClient,
     pic_info_large.and_then(|pic_info_large| pic_info_large.as_object()).
       and_then(|pic_info_large| {
         let pic_info_large_url = pic_info_large.get("url").and_then(|v| v.as_str())?;
-        let pic_info_large_pic_id = pic_info_large.get("pic_id").and_then(|v| v.as_str())?;
-        Some((pic_info_large_url.to_string(), pic_info_large_pic_id.to_string()))
+        Some(pic_info_large_url.to_string())
       })
   };
 
@@ -158,9 +158,13 @@ pub async fn attain_sinaimg_hot_timeline(weibo_clt: &AsyncClient,
   if let Some(timeline_pic_infos) = timeline_pic_infos.and_then(|val| val.as_object()) {
     // 直接从pic_infos中获取图片信息
     for (_, timeline_pic_infoi) in timeline_pic_infos.iter() {
-      if let Some((pic_url, pic_id)) = anly_pic_info_large(timeline_pic_infoi.get("large")) {
+      let Some(pic_info_pic_id) = timeline_pic_infoi.get("pic_id").and_then(|v| v.as_str())
+      else {
+        continue;
+      };
+      if let Some(pic_url) = anly_pic_info_large(timeline_pic_infoi.get("large")) {
         hot_timeline_pic_arrs.push(WeiboHotTimelinePic::weibo_hot_timeline_pic_c(
-          timeline_mid.to_string(), pic_id, pic_url,
+          timeline_mid.to_string(), pic_info_pic_id.to_string(), pic_url,
         ));
       }
     }
@@ -170,14 +174,17 @@ pub async fn attain_sinaimg_hot_timeline(weibo_clt: &AsyncClient,
       and_then(|val| val.as_array()) {
       for mix_media_info_itmi in mix_media_info_itms {
         if let Some("pic") = mix_media_info_itmi.get("type").and_then(|val| val.as_str()) {
-          if let Some((pic_url, pic_id)) = anly_pic_info_large(mix_media_info_itmi.get("data").
-            and_then(|val| val.as_object()).
-            map(|mix_media_info_large| mix_media_info_large.get("large")).
-            flatten()
-          ) {
-            hot_timeline_pic_arrs.push(WeiboHotTimelinePic::weibo_hot_timeline_pic_c(
-              timeline_mid.to_string(), pic_id, pic_url,
-            ));
+          if let Some(mix_media_info_pic) = mix_media_info_itmi.get("data").
+            and_then(|val| val.as_object()) {
+            let Some(pic_info_pic_id) = mix_media_info_pic.get("pic_id").and_then(|v| v.as_str())
+            else {
+              continue;
+            };
+            if let Some(pic_url) = anly_pic_info_large(mix_media_info_pic.get("large")) {
+              hot_timeline_pic_arrs.push(WeiboHotTimelinePic::weibo_hot_timeline_pic_c(
+                timeline_mid.to_string(), pic_info_pic_id.to_string(), pic_url,
+              ));
+            }
           }
         }
       }
