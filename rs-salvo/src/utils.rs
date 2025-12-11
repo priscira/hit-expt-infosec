@@ -141,27 +141,20 @@ pub async fn attain_ajax_hottimeline(weibo_clt: &AsyncClient, pic: bool) -> Resu
 async fn attain_sinaimg_hot_timeline(weibo_clt: &AsyncClient,
                                      timeline_mid: &str, timeline_pic_infos: Option<&JsonValue>,
                                      timeline_mix_media_infos: Option<&JsonValue>,
-) -> Result<(), WeiboError> {
-  let mut pic_arrs: Vec<WeiboHotTimelinePic> = vec![];
+) -> Result<Vec<WeiboHotTimelinePic>, WeiboError> {
   let hot_timeline_pic_arrs = anly_hot_timeline_4pic(
     timeline_mid, timeline_pic_infos, timeline_mix_media_infos)?;
-  for hot_timeline_pic_arri in hot_timeline_pic_arrs {
+  for hot_timeline_pic_arri in hot_timeline_pic_arrs.iter() {
     // 存储到本地的图片文件路径
     let pic_pth = format!("{}/{}-{}.jpg",
                           WEIBO_HOT_TIMELINE_PICS_PTH,
                           &hot_timeline_pic_arri.mid, &hot_timeline_pic_arri.pic_id);
+    // TODO: 修改为异步任务
     let timeline_pic_ctn = weibo::gain_sinaimg(&weibo_clt, &hot_timeline_pic_arri.pic_url).await?;
-    // 将图片存储到本地
-    if fs::write(&pic_pth, timeline_pic_ctn).is_err() {
-      continue;
-    }
-    pic_arrs.push(hot_timeline_pic_arri);
+    // 将图片存储到本地，忽略存储结果情况，不要影响整个循环
+    fs::write(&pic_pth, timeline_pic_ctn).ok();
   }
-  for pic_arri in pic_arrs {
-    println!("==========");
-    println!("{:?}", pic_arri);
-  }
-  Ok(())
+  Ok(hot_timeline_pic_arrs)
 }
 
 fn anly_hot_timeline_4pic(timeline_mid: &str, timeline_pic_infos: Option<&JsonValue>,
