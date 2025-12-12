@@ -17,3 +17,10 @@ CREATE TABLE IF NOT EXISTS weibo_hot_timeline
  mem_name TEXT NOT NULL,
  occur_era TEXT NOT NULL CHECK (occur_era GLOB '????-??-??'),
  UNIQUE (mid));
+
+-- 创建表格weibo_hot_timeline_pic
+CREATE TABLE IF NOT EXISTS weibo_hot_timeline_pic
+(id INTEGER PRIMARY KEY AUTOINCREMENT,
+ mid TEXT NOT NULL,
+ pic_id TEXT NOT NULL,
+ pic_url TEXT NOT NULL);
