@@ -4,9 +4,7 @@ use hifitime::prelude::Epoch;
 use hifitime::prelude::Formatter;
 use jzon::JsonValue;
 use nyquest::AsyncClient;
-use crate::dbs::WeiboHotSearch;
-use crate::dbs::WeiboHotTimeline;
-use crate::dbs::WeiboHotTimelinePic;
+use crate::dbs::*;
 use crate::exceptions::WeiboError;
 use crate::prefs::WEIBO_HOT_TIMELINE_PICS_PTH;
 use crate::weibo;
@@ -68,12 +66,15 @@ pub async fn attain_ajax_hotsearch(weibo_clt: &AsyncClient) -> Result<(), WeiboE
 /// ## 参数
 /// - `weibo_clt`：nyquest异步HTTP客户端
 /// - `pic`：是否需要爬取图片
-pub async fn attain_ajax_hottimeline(weibo_clt: &AsyncClient, pic: bool) -> Result<(), WeiboError> {
+/// - `comm`：是否需要爬取评论
+pub async fn attain_ajax_hottimeline(
+  weibo_clt: &AsyncClient, pic: bool, comm: bool) -> Result<(), WeiboError> {
   // 热门推荐列表，应是JSON格式
   let hottimeline_talk: String = weibo::gain_feed_hottimeline(&weibo_clt).await?;
 
   let mut hot_timeline_arrs = vec![];
   let mut hot_timeline_pic_arrs = vec![];
+  let mut hot_timeline_comm_arrs = vec![];
   let hot_timeline_jquin = jzon::parse(&hottimeline_talk)?;
   let hot_timeline_statuses = hot_timeline_jquin.get("statuses")
     .ok_or_else(|| weibo_jzon_err!("/ajax/feed/hottimeline no field statuses"))?;
@@ -85,12 +86,10 @@ pub async fn attain_ajax_hottimeline(weibo_clt: &AsyncClient, pic: bool) -> Resu
     let Some(timeline_mid) = hot_timeline_status_arri.get("mid").and_then(|val| val.as_str()) else {
       continue
     };
-
     let Some(timeline_mblogid) = hot_timeline_status_arri.get("mblogid").and_then(|val| val.as_str()
     ) else {
       continue
     };
-
     let Some(timeline_mem) = hot_timeline_status_arri.get("user").and_then(|val| val.as_object())
     else {
       continue;
@@ -134,9 +133,21 @@ pub async fn attain_ajax_hottimeline(weibo_clt: &AsyncClient, pic: bool) -> Resu
     ));
   }
 
+  if comm {
+    for hot_timeline_arri in hot_timeline_arrs.iter() {
+      let hot_timeline_comm = furnish_ajax_comments_hot_timeline(
+        &weibo_clt, &hot_timeline_arri.mid, &hot_timeline_arri.mem_id).await.ok();
+      if let Some(hot_timeline_comm) = hot_timeline_comm {
+        hot_timeline_comm_arrs.extend(hot_timeline_comm);
+      }
+    }
+  }
   WeiboHotTimeline::weibo_hot_timeline_u(hot_timeline_arrs).await?;
   if pic {
     WeiboHotTimelinePic::weibo_hot_timeline_pic_u(hot_timeline_pic_arrs).await?;
+  }
+  if comm {
+    WeiboHotTimelineComm::weibo_hot_timeline_comm_u(hot_timeline_comm_arrs).await?;
   }
   Ok(())
 }
@@ -152,19 +163,21 @@ async fn furnish_sinaimg_hot_timeline(weibo_clt: &AsyncClient,
                                       timeline_mid: &str, timeline_pic_infos: Option<&JsonValue>,
                                       timeline_mix_media_infos: Option<&JsonValue>,
 ) -> Result<Vec<WeiboHotTimelinePic>, WeiboError> {
-  let hot_timeline_pic_arrs = anly_hot_timeline_4pic(
-    timeline_mid, timeline_pic_infos, timeline_mix_media_infos)?;
-  for hot_timeline_pic_arri in hot_timeline_pic_arrs.iter() {
-    // 存储到本地的图片文件路径
-    let pic_pth = format!("{}/{}-{}.jpg",
-                          WEIBO_HOT_TIMELINE_PICS_PTH,
-                          &hot_timeline_pic_arri.mid, &hot_timeline_pic_arri.pic_id);
-    // TODO: 修改为异步任务
-    let timeline_pic_ctn = weibo::gain_sinaimg(&weibo_clt, &hot_timeline_pic_arri.pic_url).await?;
-    // 将图片存储到本地，忽略存储结果情况，不要影响整个循环
-    fs::write(&pic_pth, timeline_pic_ctn).ok();
+  if let Some(hot_timeline_pic_arrs) = anly_hot_timeline_4pic(
+    timeline_mid, timeline_pic_infos, timeline_mix_media_infos) {
+    for hot_timeline_pic_arri in hot_timeline_pic_arrs.iter() {
+      // 存储到本地的图片文件路径
+      let pic_pth = format!("{}/{}-{}.jpg",
+                            WEIBO_HOT_TIMELINE_PICS_PTH,
+                            &hot_timeline_pic_arri.mid, &hot_timeline_pic_arri.pic_id);
+      // TODO: 修改为异步任务
+      let timeline_pic_ctn = weibo::gain_sinaimg(&weibo_clt, &hot_timeline_pic_arri.pic_url).await?;
+      // 将图片存储到本地，忽略存储结果情况，不要影响整个循环
+      fs::write(&pic_pth, timeline_pic_ctn).ok();
+    }
+    return Ok(hot_timeline_pic_arrs);
   }
-  Ok(hot_timeline_pic_arrs)
+  Ok(vec![])
 }
 
 /// 获取最新热门推荐的评论
@@ -174,13 +187,27 @@ async fn furnish_sinaimg_hot_timeline(weibo_clt: &AsyncClient,
 /// - `timeline_mid`：热门推荐的mid
 /// - `timeline_uid`：热门推荐的用户id
 pub async fn furnish_ajax_comments_hot_timeline(
-  weibo_clt: &AsyncClient, timeline_mid: &str, timeline_uid: &str) -> Result<(), WeiboError> {
-  // 热门推荐列表，应是JSON格式
+  weibo_clt: &AsyncClient, timeline_mid: &str, timeline_uid: &str,
+) -> Result<Vec<WeiboHotTimelineComm>, WeiboError> {
+  // 热门推荐评论列表，应是JSON格式
   let hottimeline_comm_talk: String = weibo::gain_status_build_comments(
     &weibo_clt, timeline_mid, timeline_uid).await?;
 
-  println!("热门推荐评论：{}", &hottimeline_comm_talk);
-  Ok(())
+  let mut hot_timeline_comms = vec![];
+  let hot_timeline_comm_jquin = jzon::parse(&hottimeline_comm_talk)?;
+  let comm_datas = hot_timeline_comm_jquin.get("data")
+    .ok_or_else(|| weibo_jzon_err!("/ajax/feed/hottimeline no field data"))?;
+  let comm_data_arrs: &Vec<JsonValue> = comm_datas.as_array()
+    .ok_or_else(|| weibo_jzon_err!("/ajax/feed/hottimeline data is not array"))?;
+
+  for comm_data_arri in comm_data_arrs {
+    let hot_timeline_comm = anly_hot_timeline_comm(timeline_mid, comm_data_arri);
+    if let Some(hot_timeline_comm) = hot_timeline_comm {
+      hot_timeline_comms.extend(hot_timeline_comm);
+    }
+  }
+
+  Ok(hot_timeline_comms)
 }
 
 /// 从热门推荐信息中提取图片信息
@@ -191,7 +218,7 @@ pub async fn furnish_ajax_comments_hot_timeline(
 /// - `timeline_mix_media_infos`：热门推荐中的mix_media_infos，如果文本中有视屏，则从此解析图片
 fn anly_hot_timeline_4pic(timeline_mid: &str, timeline_pic_infos: Option<&JsonValue>,
                           timeline_mix_media_infos: Option<&JsonValue>,
-) -> Result<Vec<WeiboHotTimelinePic>, WeiboError> {
+) -> Option<Vec<WeiboHotTimelinePic>> {
   // 从pic_infos中获取图片信息，包括url和pic_id
   let anly_pic_info_large = |pic_info_large: Option<&JsonValue>| {
     pic_info_large.and_then(|pic_info_large| pic_info_large.as_object()).
@@ -243,5 +270,74 @@ fn anly_hot_timeline_4pic(timeline_mid: &str, timeline_pic_infos: Option<&JsonVa
     }
   }
 
-  Ok(hot_timeline_pic_arrs)
+  Some(hot_timeline_pic_arrs)
+}
+
+/// 从热门推荐信息中提取图片信息
+///
+/// ## 参数
+/// - `timeline_mid`：热门推荐的mid
+/// - `timeline_comm_info`：热门推荐评论的信息
+///
+/// ## 返回
+/// 热门推荐评论信息WeiboHotTimelineComm列表
+fn anly_hot_timeline_comm(
+  timeline_mid: &str, timeline_comm_info: &JsonValue) -> Option<Vec<WeiboHotTimelineComm>> {
+  let mut comm_arrs: Vec<WeiboHotTimelineComm> = Vec::new();
+  let Some(timeline_comm_info) = timeline_comm_info.as_object() else {
+    return None;
+  };
+
+  // 评论的mid
+  let Some(comm_mid) = timeline_comm_info.get("mid").and_then(|val| val.as_str()) else {
+    return None;
+  };
+  // 评论的根mid
+  let Some(comm_senior_id) = timeline_comm_info.get("rootidstr").and_then(|val| val.as_str()
+  ) else {
+    return None;
+  };
+  // 是否是评论回复
+  let reply: bool = comm_mid != comm_senior_id;
+
+  // 评论用户
+  let Some(timeline_mem) = timeline_comm_info.get("user").and_then(|val| val.as_object())
+  else { return None; };
+
+  // 评论内容
+  let comm_text = timeline_comm_info.get("text_raw").and_then(|val| val.as_str()).unwrap_or("");
+
+  // 评论时间
+  let comm_era = timeline_comm_info.get("created_at").and_then(|v| v.as_str()).
+    and_then(|era_talk| {
+      Epoch::from_format_str(&era_talk.replace("+0800 ", ""), "%a %b %d %H:%M:%S %Y").
+        map(|era_val| Formatter::new(era_val, ISO8601_DATE).to_string()).ok()
+    }).
+    or_else(|| {
+      Epoch::now().map(|era_val| Formatter::new(era_val, ISO8601_DATE).to_string()).ok()
+    });
+  let comm_era = if let Some(timeline_era) = comm_era {
+    timeline_era
+  } else { return None; };
+
+  let comm_mem_id = timeline_mem.get("idstr").and_then(|val| val.as_str()).unwrap_or("");
+  let comm_mem_name = timeline_mem.get("screen_name").and_then(|val| val.as_str()
+  ).unwrap_or("");
+
+  comm_arrs.push(WeiboHotTimelineComm::weibo_hot_timeline_comm_c(
+    timeline_mid.to_string(),
+    comm_mid.to_string(), comm_text.to_string(),
+    comm_mem_id.to_string(), comm_mem_name.to_string(),
+    comm_era.to_string(),
+    reply, comm_senior_id.to_string()));
+
+  // 评论回复
+  let comm_comms: Vec<WeiboHotTimelineComm> = timeline_comm_info.get("comments").
+    and_then(|v| v.as_array()).
+    into_iter().flatten().
+    flat_map(|comm_commi| anly_hot_timeline_comm(timeline_mid, comm_commi)).flatten().
+    collect();
+  comm_arrs.extend(comm_comms);
+
+  Some(comm_arrs)
 }

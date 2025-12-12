@@ -393,8 +393,8 @@ pub struct WeiboHotTimelineComm {
   pub mid: String,
   pub comm_mid: String,
   pub text: String,
-  pub user_id: String,
-  pub user_name: String,
+  pub mem_id: String,
+  pub mem_name: String,
   pub comm_era: String,
   // 是否是评论回复
   pub reply: bool,
@@ -407,25 +407,25 @@ impl WeiboHotTimelineComm {
   /// 创建一个微博热门推荐评论WeiboHotTimelineComm对象
   ///
   /// ## 参数
-  /// - `mid`: 热门推荐的mid
-  /// - `comm_mid`: 评论的mid
-  /// - `text`: 评论内容
-  /// - `user_id`: 评论用户id
-  /// - `user_name`: 评论用户名
-  /// - `comm_era`: 评论时间
-  /// - `reply`: 是否是评论回复
-  /// - `senior_id`: 如果是评论回复，存储其根评论的id
+  /// - `timeline_mid`: 热门推荐的mid
+  /// - `timeline_comm_mid`: 评论的mid
+  /// - `timeline_text`: 评论内容
+  /// - `timeline_mem_id`: 评论用户id
+  /// - `timeline_mem_name`: 评论用户名
+  /// - `timeline_comm_era`: 评论时间
+  /// - `timeline_reply`: 是否是评论回复
+  /// - `timeline_senior_id`: 如果是评论回复，存储其根评论的id
   pub fn weibo_hot_timeline_comm_c(timeline_mid: String, timeline_comm_mid: String,
-                                   timeline_text: String, timeline_user_id: String,
-                                   timeline_user_name: String, timeline_comm_era: String,
+                                   timeline_text: String, timeline_mem_id: String,
+                                   timeline_mem_name: String, timeline_comm_era: String,
                                    timeline_reply: bool, timeline_senior_id: String) -> Self {
     Self {
       id: None,
       mid: timeline_mid,
       comm_mid: timeline_comm_mid,
       text: timeline_text,
-      user_id: timeline_user_id,
-      user_name: timeline_user_name,
+      mem_id: timeline_mem_id,
+      mem_name: timeline_mem_name,
       comm_era: timeline_comm_era,
       reply: timeline_reply,
       senior_id: timeline_senior_id,
@@ -437,15 +437,15 @@ impl WeiboHotTimelineComm {
   /// ## 参数
   /// - `timeline_mid`: 热门推荐的mid，可选
   /// - `timeline_comm_mid`: 评论的mid，可选
-  /// - `timeline_user_id`: 评论用户id，可选
-  /// - `timeline_user_name`: 评论用户名，可选
+  /// - `timeline_mem_id`: 评论用户id，可选
+  /// - `timeline_mem_name`: 评论用户名，可选
   /// - `timeline_comm_era`: 评论时间，可选
   ///
   /// ## 返回
   /// 成功则返回符合查询条件的微博热门推荐评论数据
   pub async fn weibo_hot_timeline_comm_r(
     timeline_mid: Option<String>, timeline_comm_mid: Option<String>,
-    timeline_user_id: Option<String>, timeline_user_name: Option<String>,
+    timeline_mem_id: Option<String>, timeline_mem_name: Option<String>,
     timeline_comm_era: Option<String>) -> Result<Vec<Self>, WeiboError> {
     let weibo_db_rb_conn = RBatis::new();
     weibo_db_rb_conn.link(SqliteDriver {}, WEIBO_DB_PTH).await?;
@@ -457,11 +457,11 @@ impl WeiboHotTimelineComm {
     if let Some(timeline_comm_mid) = timeline_comm_mid {
       weibo_hot_timeline_comm_r_qry.insert(rbs::value!("comm_mid"), rbs::value!(timeline_comm_mid));
     }
-    if let Some(timeline_user_id) = timeline_user_id {
-      weibo_hot_timeline_comm_r_qry.insert(rbs::value!("user_id"), rbs::value!(timeline_user_id));
-    } else if let Some(timeline_user_name) = timeline_user_name {
+    if let Some(timeline_mem_id) = timeline_mem_id {
+      weibo_hot_timeline_comm_r_qry.insert(rbs::value!("mem_id"), rbs::value!(timeline_mem_id));
+    } else if let Some(timeline_mem_name) = timeline_mem_name {
       weibo_hot_timeline_comm_r_qry.insert(
-        rbs::value!("user_name"), rbs::value!(timeline_user_name));
+        rbs::value!("mem_name"), rbs::value!(timeline_mem_name));
     }
     if let Some(timeline_comm_era) = timeline_comm_era {
       weibo_hot_timeline_comm_r_qry.insert(rbs::value!("comm_era"), rbs::value!(timeline_comm_era));
@@ -498,10 +498,10 @@ impl WeiboHotTimelineComm {
   /// - `no_sieve`: 无筛选条件，删除全部数据时的保证参数
   /// - `timeline_mid`: 热门推荐的mid，可选
   /// - `timeline_comm_mid`: 评论的mid，可选
-  /// - `timeline_user_id`: 评论用户id，可选
+  /// - `timeline_mem_id`: 评论用户id，可选
   pub async fn weibo_hot_timeline_comm_d(
     no_sieve: bool, timeline_mid: Option<String>, timeline_comm_mid: Option<String>,
-    timeline_user_id: Option<String>) -> Result<(), WeiboError> {
+    timeline_mem_id: Option<String>) -> Result<(), WeiboError> {
     let weibo_db_rb_conn = RBatis::new();
     weibo_db_rb_conn.link(SqliteDriver {}, WEIBO_DB_PTH).await?;
 
@@ -513,8 +513,8 @@ impl WeiboHotTimelineComm {
     if let Some(timeline_comm_mid) = timeline_comm_mid {
       weibo_hot_timeline_comm_d_qry.insert(rbs::value!("comm_mid"), rbs::value!(timeline_comm_mid));
     }
-    if let Some(timeline_user_id) = timeline_user_id {
-      weibo_hot_timeline_comm_d_qry.insert(rbs::value!("user_id"), rbs::value!(timeline_user_id));
+    if let Some(timeline_mem_id) = timeline_mem_id {
+      weibo_hot_timeline_comm_d_qry.insert(rbs::value!("mem_id"), rbs::value!(timeline_mem_id));
     }
     if weibo_hot_timeline_comm_d_qry.is_empty() && !no_sieve {
       return Err(WeiboError::RbatisError("delete all the data from the database, \

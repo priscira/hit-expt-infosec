@@ -25,9 +25,7 @@ async fn main() {
       .build_async()
       .await
       .expect("Failed to build client");
-  // mid: 5242751438294893
-  // uid: 7277232894
-  match furnish_ajax_comments_hot_timeline(&weibo_clt, "5242751438294893", "7277232894").await {
+  match attain_ajax_hottimeline(&weibo_clt, true, true).await {
     | Ok(_) => {
       println!("成功");
     }
