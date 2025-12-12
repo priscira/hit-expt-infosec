@@ -141,6 +141,13 @@ pub async fn attain_ajax_hottimeline(weibo_clt: &AsyncClient, pic: bool) -> Resu
   Ok(())
 }
 
+/// 获取热门推荐的图片信息
+///
+/// ## 参数
+/// - `weibo_clt`：nyquest异步HTTP客户端
+/// - `timeline_mid`：热门推荐的mid
+/// - `timeline_pic_infos`：热门推荐中的pic_infos，如果文本中没有视频，则从此解析图片
+/// - `timeline_mix_media_infos`：热门推荐中的mix_media_infos，如果文本中有视屏，则从此解析图片
 async fn attain_sinaimg_hot_timeline(weibo_clt: &AsyncClient,
                                      timeline_mid: &str, timeline_pic_infos: Option<&JsonValue>,
                                      timeline_mix_media_infos: Option<&JsonValue>,
@@ -160,6 +167,12 @@ async fn attain_sinaimg_hot_timeline(weibo_clt: &AsyncClient,
   Ok(hot_timeline_pic_arrs)
 }
 
+/// 从热门推荐信息中提取图片信息
+///
+/// ## 参数
+/// - `timeline_mid`：热门推荐的mid
+/// - `timeline_pic_infos`：热门推荐中的pic_infos，如果文本中没有视频，则从此解析图片
+/// - `timeline_mix_media_infos`：热门推荐中的mix_media_infos，如果文本中有视屏，则从此解析图片
 fn anly_hot_timeline_4pic(timeline_mid: &str, timeline_pic_infos: Option<&JsonValue>,
                           timeline_mix_media_infos: Option<&JsonValue>,
 ) -> Result<Vec<WeiboHotTimelinePic>, WeiboError> {
