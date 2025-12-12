@@ -100,7 +100,7 @@ pub async fn attain_ajax_hottimeline(weibo_clt: &AsyncClient, pic: bool) -> Resu
       let timeline_pic_infos: Option<&JsonValue> = hot_timeline_status_arri.get("pic_infos");
       let timeline_mix_media_infos: Option<&JsonValue> =
         hot_timeline_status_arri.get("mix_media_info");
-      hot_timeline_pic_arrs.extend(attain_sinaimg_hot_timeline(
+      hot_timeline_pic_arrs.extend(furnish_sinaimg_hot_timeline(
         &weibo_clt, timeline_mid, timeline_pic_infos, timeline_mix_media_infos).await?);
     }
 
@@ -148,9 +148,9 @@ pub async fn attain_ajax_hottimeline(weibo_clt: &AsyncClient, pic: bool) -> Resu
 /// - `timeline_mid`：热门推荐的mid
 /// - `timeline_pic_infos`：热门推荐中的pic_infos，如果文本中没有视频，则从此解析图片
 /// - `timeline_mix_media_infos`：热门推荐中的mix_media_infos，如果文本中有视屏，则从此解析图片
-async fn attain_sinaimg_hot_timeline(weibo_clt: &AsyncClient,
-                                     timeline_mid: &str, timeline_pic_infos: Option<&JsonValue>,
-                                     timeline_mix_media_infos: Option<&JsonValue>,
+async fn furnish_sinaimg_hot_timeline(weibo_clt: &AsyncClient,
+                                      timeline_mid: &str, timeline_pic_infos: Option<&JsonValue>,
+                                      timeline_mix_media_infos: Option<&JsonValue>,
 ) -> Result<Vec<WeiboHotTimelinePic>, WeiboError> {
   let hot_timeline_pic_arrs = anly_hot_timeline_4pic(
     timeline_mid, timeline_pic_infos, timeline_mix_media_infos)?;
@@ -165,6 +165,22 @@ async fn attain_sinaimg_hot_timeline(weibo_clt: &AsyncClient,
     fs::write(&pic_pth, timeline_pic_ctn).ok();
   }
   Ok(hot_timeline_pic_arrs)
+}
+
+/// 获取最新热门推荐的评论
+///
+/// ## 参数
+/// - `weibo_clt`：nyquest异步HTTP客户端
+/// - `timeline_mid`：热门推荐的mid
+/// - `timeline_uid`：热门推荐的用户id
+pub async fn furnish_ajax_comments_hot_timeline(
+  weibo_clt: &AsyncClient, timeline_mid: &str, timeline_uid: &str) -> Result<(), WeiboError> {
+  // 热门推荐列表，应是JSON格式
+  let hottimeline_comm_talk: String = weibo::gain_status_build_comments(
+    &weibo_clt, timeline_mid, timeline_uid).await?;
+
+  println!("热门推荐评论：{}", &hottimeline_comm_talk);
+  Ok(())
 }
 
 /// 从热门推荐信息中提取图片信息

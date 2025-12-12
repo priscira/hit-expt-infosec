@@ -5,8 +5,8 @@ mod utils;
 mod weibo;
 mod wm;
 
-use nyquest::ClientBuilder;
 use nyquest::AsyncClient;
+use nyquest::ClientBuilder;
 use crate::utils::*;
 
 // TODO: 修改weibo的cookie
@@ -25,7 +25,9 @@ async fn main() {
       .build_async()
       .await
       .expect("Failed to build client");
-  match attain_ajax_hottimeline(&weibo_clt, true).await {
+  // mid: 5242751438294893
+  // uid: 7277232894
+  match furnish_ajax_comments_hot_timeline(&weibo_clt, "5242751438294893", "7277232894").await {
     | Ok(_) => {
       println!("成功");
     }
