@@ -26,9 +26,9 @@ async fn main() {
       .await
       .expect("Failed to build client");
   match attain_ajax_hottimeline(&weibo_clt, true, true).await {
-    | Ok(_) => {
+    Ok(_) => {
       println!("成功");
     }
-    | Err(flaw) => println!("失败: {}", flaw)
+    Err(flaw) => println!("失败: {}", flaw)
   };
 }

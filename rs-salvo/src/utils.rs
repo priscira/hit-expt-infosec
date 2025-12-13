@@ -152,6 +152,19 @@ pub async fn attain_ajax_hottimeline(
   Ok(())
 }
 
+/// 获取最新热门推荐的评论并插入数据库
+///
+/// ## 参数
+/// - `weibo_clt`：nyquest异步HTTP客户端
+/// - `timeline_mid`：热门推荐的mid
+/// - `timeline_uid`：热门推荐的用户id
+pub async fn attain_ajax_comments_hottimeline(
+  weibo_clt: &AsyncClient, timeline_mid: &str, timeline_uid: &str) -> Result<(), WeiboError> {
+  let hot_timeline_comm_arrs = furnish_ajax_comments_hot_timeline(
+    &weibo_clt, timeline_mid, timeline_uid).await?;
+  WeiboHotTimelineComm::weibo_hot_timeline_comm_u(hot_timeline_comm_arrs).await
+}
+
 /// 获取热门推荐的图片信息
 ///
 /// ## 参数
@@ -186,7 +199,7 @@ async fn furnish_sinaimg_hot_timeline(weibo_clt: &AsyncClient,
 /// - `weibo_clt`：nyquest异步HTTP客户端
 /// - `timeline_mid`：热门推荐的mid
 /// - `timeline_uid`：热门推荐的用户id
-pub async fn furnish_ajax_comments_hot_timeline(
+async fn furnish_ajax_comments_hot_timeline(
   weibo_clt: &AsyncClient, timeline_mid: &str, timeline_uid: &str,
 ) -> Result<Vec<WeiboHotTimelineComm>, WeiboError> {
   // 热门推荐评论列表，应是JSON格式
