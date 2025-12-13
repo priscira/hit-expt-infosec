@@ -4,10 +4,16 @@ mod prefs;
 mod utils;
 mod weibo;
 mod wm;
+mod views;
 
 use nyquest::AsyncClient;
 use nyquest::ClientBuilder;
+use rbatis::RBatis;
+use rbdc_sqlite::SqliteDriver;
+use salvo::prelude::*;
+use crate::prefs::WEIBO_DB_PTH;
 use crate::utils::*;
+use crate::views::*;
 
 // TODO: 修改weibo的cookie
 
@@ -25,10 +31,18 @@ async fn main() {
       .build_async()
       .await
       .expect("Failed to build client");
-  match attain_ajax_hottimeline(&weibo_clt, true, true).await {
-    Ok(_) => {
-      println!("成功");
-    }
-    Err(flaw) => println!("失败: {}", flaw)
-  };
+  let weibo_db_rb_conn = RBatis::new();
+  weibo_db_rb_conn.link(SqliteDriver {}, WEIBO_DB_PTH).await.unwrap();
+
+  let acceptor = TcpListener::new("0.0.0.0:5800").bind().await;
+  let router = Router::new().hoop(affix_state::insert("weibo_clt", weibo_clt).
+    insert("weibo_db_rb_conn", weibo_db_rb_conn)).
+    get(hello);
+  Server::new(acceptor).serve(router).await;
+  // match attain_ajax_hottimeline(&weibo_clt, true, true).await {
+  //   Ok(_) => {
+  //     println!("成功");
+  //   }
+  //   Err(flaw) => println!("失败: {}", flaw)
+  // };
 }
