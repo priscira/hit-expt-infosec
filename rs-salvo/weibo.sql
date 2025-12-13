@@ -24,3 +24,15 @@ CREATE TABLE IF NOT EXISTS weibo_hot_timeline_pic
  mid TEXT NOT NULL,
  pic_id TEXT NOT NULL,
  pic_url TEXT NOT NULL);
+
+-- 创建表格weibo_hot_timeline_pic
+CREATE TABLE IF NOT EXISTS weibo_hot_timeline_comm
+(id INTEGER PRIMARY KEY AUTOINCREMENT,
+ mid TEXT NOT NULL,
+ comm_mid TEXT NOT NULL,
+ text TEXT NOT NULL,
+ mem_id TEXT NOT NULL,
+ mem_name TEXT NOT NULL,
+ comm_era TEXT NOT NULL CHECK (comm_era GLOB '????-??-??'),
+ reply INTEGER NOT NULL,
+ senior_id TEXT NOT NULL);
