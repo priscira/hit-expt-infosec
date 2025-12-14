@@ -2,6 +2,7 @@ use nyquest::AsyncClient;
 use nyquest::r#async::Request;
 use nyquest::r#async::Response;
 use crate::exceptions::WeiboError;
+use crate::prefs::WEIBO_COK;
 
 /// 访问链接获取微博热搜
 pub async fn gain_side_hotsearch(weibo_clt: &AsyncClient) -> Result<String, WeiboError> {
@@ -26,8 +27,7 @@ pub async fn gain_feed_hottimeline(weibo_clt: &AsyncClient) -> Result<String, We
   let gain_info = Request::get("feed/hottimeline?\
                                 since_id=0&refresh=0&group_id=102803&containerid=102803&\
                                 extparam=discover|new_feed&max_id=0&count=10")
-    .with_header("cookie", "SUB=_2AkMfmjsOf8NxqwFRmvsXyG_mZIt_yQzEieKpxsrVJRMxH\
-                                Rl-yT9kqlA7tRB6NBoV4ZGJe5Iw-S2YDB_0-D8LEMJWYViw");
+    .with_header("cookie", WEIBO_COK);
   let reap: Response = weibo_clt.request(gain_info).await?;
   if !reap.status().is_successful() {
     return Err(WeiboError::NyquestError(format!("/ajax/feed/hottimeline status code is {}",
@@ -55,8 +55,7 @@ pub async fn gain_status_build_comments(
                                 is_reload=1&id={mid}&is_show_bulletin=2&\
                                 is_mix=0&count=20&type=feed&uid={uid}&\
                                 fetch_level=0&locale=zh-CN"))
-    .with_header("cookie", "SUB=_2AkMfmjsOf8NxqwFRmvsXyG_mZIt_yQzEieKpxsrVJRMxH\
-                                Rl-yT9kqlA7tRB6NBoV4ZGJe5Iw-S2YDB_0-D8LEMJWYViw");
+    .with_header("cookie", WEIBO_COK);
   let reap: Response = weibo_clt.request(gain_info).await?;
   if !reap.status().is_successful() {
     return Err(WeiboError::NyquestError(format!("/ajax/statuses/buildComments status code is {}",

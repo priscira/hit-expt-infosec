@@ -9,3 +9,27 @@ pub async fn hello(depot: &mut Depot) -> String {
   println!("####");
   "Hello World".to_string()
 }
+
+#[handler]
+pub async fn hot_search_r(depot: &mut Depot) -> String {
+  let custom_data: &AsyncClient = depot.get("weibo_clt").unwrap();
+  let weibo_db_rb_conn: &RBatis = depot.get("weibo_db_rb_conn").unwrap();
+  println!("####");
+  "Hello World".to_string()
+}
+
+#[handler]
+pub async fn hot_search_u(depot: &mut Depot) -> String {
+  let custom_data: &AsyncClient = depot.get("weibo_clt").unwrap();
+  let weibo_db_rb_conn: &RBatis = depot.get("weibo_db_rb_conn").unwrap();
+  println!("####");
+  "Hello World".to_string()
+}
+
+#[handler]
+pub async fn hot_search_d(depot: &mut Depot) -> String {
+  let custom_data: &AsyncClient = depot.get("weibo_clt").unwrap();
+  let weibo_db_rb_conn: &RBatis = depot.get("weibo_db_rb_conn").unwrap();
+  println!("####");
+  "Hello World".to_string()
+}

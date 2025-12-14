@@ -44,7 +44,16 @@ async fn main() {
     hoop(affix_state::insert("weibo_clt", weibo_clt).
       insert("weibo_db_rb_conn", weibo_db_rb_conn)).
     hoop(CatchPanic::new()).
-    get(hello);
+    get(hello).
+    push(Router::with_path("r").push(
+      Router::with_path("hot_search").post(hot_search_r)
+    )).
+    push(Router::with_path("u").push(
+      Router::with_path("hot_search").post(hot_search_u)
+    )).
+    push(Router::with_path("d").push(
+      Router::with_path("hot_search").post(hot_search_d)
+    ));
   let salvo_svc = Service::new(salvo_rt).hoop(LogLogger::new());
   Server::new(salvo_accept).serve(salvo_svc).await;
 }
