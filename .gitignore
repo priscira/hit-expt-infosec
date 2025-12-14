@@ -5,6 +5,8 @@
 **/.idea/
 
 rs-salvo/weibo.db*
+rs-salvo/weibo-log.txt
+rs-salvo/Cargo.lock
 **/target/
 
 **/.venv/

@@ -11,6 +11,7 @@ use nyquest::ClientBuilder;
 use rbatis::RBatis;
 use rbdc_sqlite::SqliteDriver;
 use salvo::prelude::*;
+use salvo_mdw::LogLogger;
 use crate::prefs::WEIBO_DB_PTH;
 use crate::views::*;
 
@@ -18,6 +19,9 @@ use crate::views::*;
 
 #[tokio::main]
 async fn main() {
+  // log4rs日志初始化
+  log4rs::init_file("weibo-log4rs.yml", Default::default()).expect("log4rs: failed to init logger");
+
   // nyquest爬虫客户端
   nyquest_preset::register();
   let weibo_clt: AsyncClient =
@@ -29,6 +33,7 @@ async fn main() {
       dangerously_ignore_certificate_errors().no_redirects().
       build_async().await.
       expect("nyquest: failed to build async-client");
+
   // rbatis数据库连接
   let weibo_db_rb_conn: RBatis = RBatis::new();
   weibo_db_rb_conn.link(SqliteDriver {}, WEIBO_DB_PTH).await.
@@ -40,6 +45,6 @@ async fn main() {
       insert("weibo_db_rb_conn", weibo_db_rb_conn)).
     hoop(CatchPanic::new()).
     get(hello);
-  let salvo_svc = Service::new(salvo_rt).hoop(Logger::new());
+  let salvo_svc = Service::new(salvo_rt).hoop(LogLogger::new());
   Server::new(salvo_accept).serve(salvo_svc).await;
 }

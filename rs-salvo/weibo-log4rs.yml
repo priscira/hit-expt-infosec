@@ -1,0 +1,24 @@
+refresh_rate: 30 seconds
+
+appenders:
+  stdout:
+    kind: console
+    encoder:
+      pattern: "{l} {d(%Y-%m-%d %H:%M:%S)} {m}{n}"
+
+  requests:
+    kind: file
+    path: "weibo-log.txt"
+    encoder:
+      pattern: "{l} {d(%Y-%m-%d %H:%M:%S)} {m}{n}"
+
+root:
+  level: info
+  appenders:
+    - stdout
+
+loggers:
+  salvo_mdw::logging:
+    level: debug
+    appenders:
+      - requests
