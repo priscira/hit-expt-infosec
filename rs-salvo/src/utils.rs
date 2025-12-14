@@ -4,6 +4,7 @@ use hifitime::prelude::Epoch;
 use hifitime::prelude::Formatter;
 use jzon::JsonValue;
 use nyquest::AsyncClient;
+use rbatis::RBatis;
 use crate::dbs::*;
 use crate::exceptions::WeiboError;
 use crate::prefs::WEIBO_HOT_TIMELINE_PICS_PTH;
@@ -14,7 +15,9 @@ use crate::weibo_jzon_err;
 ///
 /// ## 参数
 /// - `weibo_clt`：nyquest异步HTTP客户端
-pub async fn attain_ajax_hotsearch(weibo_clt: &AsyncClient) -> Result<(), WeiboError> {
+/// - `weibo_db_rb_conn`：rbatis数据库连接
+pub async fn attain_ajax_hotsearch(
+  weibo_clt: &AsyncClient, weibo_db_rb_conn: &RBatis) -> Result<(), WeiboError> {
   // 热搜列表，应是JSON格式
   let hotsearch_talk: String = weibo::gain_side_hotsearch(&weibo_clt).await?;
 
@@ -58,17 +61,18 @@ pub async fn attain_ajax_hotsearch(weibo_clt: &AsyncClient) -> Result<(), WeiboE
     );
   }
 
-  WeiboHotSearch::weibo_hot_search_u(hot_search_arrs).await
+  WeiboHotSearch::weibo_hot_search_u(weibo_db_rb_conn, hot_search_arrs).await
 }
 
 /// 获取最新热门推荐并插入数据库
 ///
 /// ## 参数
 /// - `weibo_clt`：nyquest异步HTTP客户端
+/// - `weibo_db_rb_conn`：rbatis数据库连接
 /// - `pic`：是否需要爬取图片
 /// - `comm`：是否需要爬取评论
-pub async fn attain_ajax_hottimeline(
-  weibo_clt: &AsyncClient, pic: bool, comm: bool) -> Result<(), WeiboError> {
+pub async fn attain_ajax_hottimeline(weibo_clt: &AsyncClient, weibo_db_rb_conn: &RBatis,
+                                     pic: bool, comm: bool) -> Result<(), WeiboError> {
   // 热门推荐列表，应是JSON格式
   let hottimeline_talk: String = weibo::gain_feed_hottimeline(&weibo_clt).await?;
 
@@ -142,12 +146,13 @@ pub async fn attain_ajax_hottimeline(
       }
     }
   }
-  WeiboHotTimeline::weibo_hot_timeline_u(hot_timeline_arrs).await?;
+  WeiboHotTimeline::weibo_hot_timeline_u(weibo_db_rb_conn, hot_timeline_arrs).await?;
   if pic {
-    WeiboHotTimelinePic::weibo_hot_timeline_pic_u(hot_timeline_pic_arrs).await?;
+    WeiboHotTimelinePic::weibo_hot_timeline_pic_u(weibo_db_rb_conn, hot_timeline_pic_arrs).await?;
   }
   if comm {
-    WeiboHotTimelineComm::weibo_hot_timeline_comm_u(hot_timeline_comm_arrs).await?;
+    WeiboHotTimelineComm::weibo_hot_timeline_comm_u(
+      weibo_db_rb_conn, hot_timeline_comm_arrs).await?;
   }
   Ok(())
 }
@@ -156,13 +161,15 @@ pub async fn attain_ajax_hottimeline(
 ///
 /// ## 参数
 /// - `weibo_clt`：nyquest异步HTTP客户端
+/// - `weibo_db_rb_conn`：rbatis数据库连接
 /// - `timeline_mid`：热门推荐的mid
 /// - `timeline_uid`：热门推荐的用户id
 pub async fn attain_ajax_comments_hottimeline(
-  weibo_clt: &AsyncClient, timeline_mid: &str, timeline_uid: &str) -> Result<(), WeiboError> {
+  weibo_clt: &AsyncClient, weibo_db_rb_conn: &RBatis,
+  timeline_mid: &str, timeline_uid: &str) -> Result<(), WeiboError> {
   let hot_timeline_comm_arrs = furnish_ajax_comments_hot_timeline(
     &weibo_clt, timeline_mid, timeline_uid).await?;
-  WeiboHotTimelineComm::weibo_hot_timeline_comm_u(hot_timeline_comm_arrs).await
+  WeiboHotTimelineComm::weibo_hot_timeline_comm_u(weibo_db_rb_conn, hot_timeline_comm_arrs).await
 }
 
 /// 获取热门推荐的图片信息

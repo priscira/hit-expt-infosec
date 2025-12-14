@@ -1,9 +1,7 @@
 use rbatis::RBatis;
-use rbdc_sqlite::SqliteDriver;
 use serde::Deserialize;
 use serde::Serialize;
 use crate::exceptions::WeiboError;
-use crate::prefs::WEIBO_DB_PTH;
 
 /// 微博热搜
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -43,6 +41,7 @@ impl WeiboHotSearch {
   /// 获取微博热搜WeiboHotSearch对象
   ///
   /// ## 参数
+  /// - `weibo_db_rb_conn`：rbatis数据库连接
   /// - `weibo_title`: 热搜标题，可选
   /// - `occur_era`: 热搜出现的年月日，格式YYYY-MM-DD，可选
   ///
@@ -66,6 +65,7 @@ impl WeiboHotSearch {
   /// 更新微博热搜WeiboHotSearch数据，如果有当天的同名的热搜，那么不做处理；否则直接插入。
   ///
   /// ## 参数
+  /// - `weibo_db_rb_conn`：rbatis数据库连接
   /// - `hot_search_arrs`: 新的微博热搜数据
   pub async fn weibo_hot_search_u(
     weibo_db_rb_conn: &RBatis, hot_search_arrs: Vec<WeiboHotSearch>) -> Result<(), WeiboError> {
@@ -96,6 +96,7 @@ impl WeiboHotSearch {
   /// 删除微博热搜WeiboHotSearch数据。
   ///
   /// ## 参数
+  /// - `weibo_db_rb_conn`：rbatis数据库连接
   /// - `no_sieve`: 无筛选条件，删除全部数据时的保证参数
   /// - `occur_era`: 热搜出现的年月日，格式YYYY-MM-DD，可选
   pub async fn weibo_hot_search_d(weibo_db_rb_conn: &RBatis, no_sieve: bool,
@@ -163,6 +164,7 @@ impl WeiboHotTimeline {
   /// 获取微博热门推荐WeiboHotTimeline对象
   ///
   /// ## 参数
+  /// - `weibo_db_rb_conn`：rbatis数据库连接
   /// - `timeline_mid`: 热门推荐的mid，可选
   /// - `timeline_mem_id`: 热门推荐的发布者的编号，可选
   /// - `timeline_mem_name`: 热门推荐的发布者的名称，可选
@@ -171,12 +173,9 @@ impl WeiboHotTimeline {
   /// ## 返回
   /// 成功则返回符合查询条件的微博热门推荐数据
   pub async fn weibo_hot_timeline_r(
-    timeline_mid: Option<String>, timeline_mem_id: Option<String>,
+    weibo_db_rb_conn: &RBatis, timeline_mid: Option<String>, timeline_mem_id: Option<String>,
     timeline_mem_name: Option<String>, timeline_occur_era: Option<String>)
     -> Result<Vec<Self>, WeiboError> {
-    let weibo_db_rb_conn = RBatis::new();
-    weibo_db_rb_conn.link(SqliteDriver {}, WEIBO_DB_PTH).await?;
-
     let mut weibo_hot_timeline_r_qry = rbs::value! {};
     if let Some(timeline_mid) = timeline_mid {
       weibo_hot_timeline_r_qry.insert(rbs::value!("mid"), rbs::value!(timeline_mid));
@@ -191,7 +190,7 @@ impl WeiboHotTimeline {
       weibo_hot_timeline_r_qry.insert(rbs::value!("occur_era"), rbs::value!(timeline_occur_era));
     }
 
-    Self::select_by_map(&weibo_db_rb_conn, weibo_hot_timeline_r_qry).await.map_err(|flaw| {
+    Self::select_by_map(weibo_db_rb_conn, weibo_hot_timeline_r_qry).await.map_err(|flaw| {
       WeiboError::RbatisError(flaw.to_string())
     })
   }
@@ -199,15 +198,13 @@ impl WeiboHotTimeline {
   /// 更新微博热门推荐WeiboHotTimeline数据，如果有相同的mid则更新；否则直接插入。
   ///
   /// ## 参数
+  /// - `weibo_db_rb_conn`：rbatis数据库连接
   /// - `hot_timeline_arrs`: 新的微博热门推荐数据
-  pub async fn weibo_hot_timeline_u(hot_timeline_arrs: Vec<Self>)
-                                    -> Result<(), WeiboError> {
+  pub async fn weibo_hot_timeline_u(
+    weibo_db_rb_conn: &RBatis, hot_timeline_arrs: Vec<Self>) -> Result<(), WeiboError> {
     if hot_timeline_arrs.is_empty() {
       return Ok(());
     }
-
-    let weibo_db_rb_conn = RBatis::new();
-    weibo_db_rb_conn.link(SqliteDriver {}, WEIBO_DB_PTH).await?;
 
     let mut weibo_hot_timeline_ques = vec![];
     let mut weibo_hot_timeline_pars = vec![];
@@ -240,18 +237,17 @@ impl WeiboHotTimeline {
   /// 删除微博热门推荐WeiboHotTimeline数据。
   ///
   /// ## 参数
+  /// - `weibo_db_rb_conn`：rbatis数据库连接
   /// - `no_sieve`: 无筛选条件，删除全部数据时的保证参数
   /// - `timeline_mid`: 热门推荐的mid，可选
   /// - `timeline_mem_id`: 热门推荐的发布者的编号，可选
   /// - `timeline_mem_name`: 热门推荐的发布者的名称，可选
   /// - `timeline_occur_era`: 热门推荐出现的年月日，格式YYYY-MM-DD，可选
   pub async fn weibo_hot_timeline_d(
+    weibo_db_rb_conn: &RBatis,
     no_sieve: bool, timeline_mid: Option<String>, timeline_mem_id: Option<String>,
     timeline_mem_name: Option<String>, timeline_occur_era: Option<String>)
     -> Result<(), WeiboError> {
-    let weibo_db_rb_conn = RBatis::new();
-    weibo_db_rb_conn.link(SqliteDriver {}, WEIBO_DB_PTH).await?;
-
     let mut weibo_hot_timeline_d_qry = rbs::value! {};
 
     if let Some(timeline_mid) = timeline_mid {
@@ -271,7 +267,7 @@ impl WeiboHotTimeline {
                                          but no_sieve guarantee isn't provided.".to_string()));
     }
 
-    Self::delete_by_map(&weibo_db_rb_conn, weibo_hot_timeline_d_qry).await.map(|_| ()).map_err(
+    Self::delete_by_map(weibo_db_rb_conn, weibo_hot_timeline_d_qry).await.map(|_| ()).map_err(
       |flaw| {
         WeiboError::RbatisError(flaw.to_string())
       }
@@ -312,6 +308,7 @@ impl WeiboHotTimelinePic {
   /// 获取微博热门推荐图片WeiboHotTimelinePic对象
   ///
   /// ## 参数
+  /// - `weibo_db_rb_conn`：rbatis数据库连接
   /// - `timeline_mid`: 热门推荐的mid，可选
   ///
   /// ## 返回
@@ -331,6 +328,7 @@ impl WeiboHotTimelinePic {
   /// 更新微博热门推荐图片WeiboHotTimelinePic数据
   ///
   /// ## 参数
+  /// - `weibo_db_rb_conn`：rbatis数据库连接
   /// - `hot_timeline_pic_arrs`: 新的微博热门推荐图片数据
   pub async fn weibo_hot_timeline_pic_u(
     weibo_db_rb_conn: &RBatis, hot_timeline_pic_arrs: Vec<Self>) -> Result<(), WeiboError> {
@@ -348,6 +346,7 @@ impl WeiboHotTimelinePic {
   /// 删除微博热门推荐图片WeiboHotTimelinePic数据
   ///
   /// ## 参数
+  /// - `weibo_db_rb_conn`：rbatis数据库连接
   /// - `no_sieve`: 无筛选条件，删除全部数据时的保证参数
   /// - `timeline_mid`: 热门推荐的mid，可选
   pub async fn weibo_hot_timeline_pic_d(weibo_db_rb_conn: &RBatis, no_sieve: bool,
@@ -418,6 +417,7 @@ impl WeiboHotTimelineComm {
   /// 获取微博热门推荐评论WeiboHotTimelineComm对象
   ///
   /// ## 参数
+  /// - `weibo_db_rb_conn`：rbatis数据库连接
   /// - `timeline_mid`: 热门推荐的mid，可选
   /// - `timeline_comm_mid`: 评论的mid，可选
   /// - `timeline_mem_id`: 评论用户id，可选
@@ -456,6 +456,7 @@ impl WeiboHotTimelineComm {
   /// 更新微博热门推荐评论WeiboHotTimelineComm数据
   ///
   /// ## 参数
+  /// - `weibo_db_rb_conn`：rbatis数据库连接
   /// - `hot_timeline_comm_arrs`: 新的微博热门推荐评论数据
   pub async fn weibo_hot_timeline_comm_u(
     weibo_db_rb_conn: &RBatis, hot_timeline_comm_arrs: Vec<Self>) -> Result<(), WeiboError> {
@@ -473,6 +474,7 @@ impl WeiboHotTimelineComm {
   /// 删除微博热门推荐评论WeiboHotTimelineComm数据
   ///
   /// ## 参数
+  /// - `weibo_db_rb_conn`：rbatis数据库连接
   /// - `no_sieve`: 无筛选条件，删除全部数据时的保证参数
   /// - `timeline_mid`: 热门推荐的mid，可选
   /// - `timeline_comm_mid`: 评论的mid，可选

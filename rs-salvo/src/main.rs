@@ -15,8 +15,6 @@ use salvo_mdw::LogLogger;
 use crate::prefs::WEIBO_DB_PTH;
 use crate::views::*;
 
-// TODO: 修改weibo的cookie
-
 #[tokio::main]
 async fn main() {
   // log4rs日志初始化
