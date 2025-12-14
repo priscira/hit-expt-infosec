@@ -48,11 +48,8 @@ impl WeiboHotSearch {
   ///
   /// ## 返回
   /// 成功则返回符合查询条件的微博热搜数据
-  pub async fn weibo_hot_search_r(weibo_title: Option<String>, occur_era: Option<String>)
-                                  -> Result<Vec<Self>, WeiboError> {
-    let weibo_db_rb_conn = RBatis::new();
-    weibo_db_rb_conn.link(SqliteDriver {}, WEIBO_DB_PTH).await?;
-
+  pub async fn weibo_hot_search_r(weibo_db_rb_conn: &RBatis, weibo_title: Option<String>,
+                                  occur_era: Option<String>) -> Result<Vec<Self>, WeiboError> {
     let mut weibo_hot_search_r_qry = rbs::value! {};
     if let Some(weibo_title) = weibo_title {
       weibo_hot_search_r_qry.insert(rbs::value!("title"), rbs::value!(weibo_title));
@@ -61,7 +58,7 @@ impl WeiboHotSearch {
       weibo_hot_search_r_qry.insert(rbs::value!("occur_era"), rbs::value!(occur_era));
     }
 
-    Self::select_by_map(&weibo_db_rb_conn, weibo_hot_search_r_qry).await.map_err(|flaw| {
+    Self::select_by_map(weibo_db_rb_conn, weibo_hot_search_r_qry).await.map_err(|flaw| {
       WeiboError::RbatisError(flaw.to_string())
     })
   }
@@ -70,13 +67,11 @@ impl WeiboHotSearch {
   ///
   /// ## 参数
   /// - `hot_search_arrs`: 新的微博热搜数据
-  pub async fn weibo_hot_search_u(hot_search_arrs: Vec<WeiboHotSearch>) -> Result<(), WeiboError> {
+  pub async fn weibo_hot_search_u(
+    weibo_db_rb_conn: &RBatis, hot_search_arrs: Vec<WeiboHotSearch>) -> Result<(), WeiboError> {
     if hot_search_arrs.is_empty() {
       return Ok(());
     }
-
-    let weibo_db_rb_conn = RBatis::new();
-    weibo_db_rb_conn.link(SqliteDriver {}, WEIBO_DB_PTH).await?;
 
     let mut weibo_hot_search_ques = vec![];
     let mut weibo_hot_search_pars = vec![];
@@ -103,11 +98,8 @@ impl WeiboHotSearch {
   /// ## 参数
   /// - `no_sieve`: 无筛选条件，删除全部数据时的保证参数
   /// - `occur_era`: 热搜出现的年月日，格式YYYY-MM-DD，可选
-  pub async fn weibo_hot_search_d(no_sieve: bool, occur_era: Option<String>)
-                                  -> Result<(), WeiboError> {
-    let weibo_db_rb_conn = RBatis::new();
-    weibo_db_rb_conn.link(SqliteDriver {}, WEIBO_DB_PTH).await?;
-
+  pub async fn weibo_hot_search_d(weibo_db_rb_conn: &RBatis, no_sieve: bool,
+                                  occur_era: Option<String>) -> Result<(), WeiboError> {
     let mut weibo_hot_search_d_qry = rbs::value! {};
 
     if let Some(occur_era) = occur_era {
@@ -117,7 +109,7 @@ impl WeiboHotSearch {
                                          but no_sieve guarantee isn't provided.".to_string()));
     }
 
-    Self::delete_by_map(&weibo_db_rb_conn, weibo_hot_search_d_qry).await.map(|_| ()).map_err(
+    Self::delete_by_map(weibo_db_rb_conn, weibo_hot_search_d_qry).await.map(|_| ()).map_err(
       |flaw| {
         WeiboError::RbatisError(flaw.to_string())
       }
@@ -324,17 +316,14 @@ impl WeiboHotTimelinePic {
   ///
   /// ## 返回
   /// 成功则返回符合查询条件的微博热门推荐图片数据
-  pub async fn weibo_hot_timeline_pic_r(timeline_mid: Option<String>
-  ) -> Result<Vec<Self>, WeiboError> {
-    let weibo_db_rb_conn = RBatis::new();
-    weibo_db_rb_conn.link(SqliteDriver {}, WEIBO_DB_PTH).await?;
-
+  pub async fn weibo_hot_timeline_pic_r(
+    weibo_db_rb_conn: &RBatis, timeline_mid: Option<String>) -> Result<Vec<Self>, WeiboError> {
     let mut weibo_hot_timeline_pic_r_qry = rbs::value! {};
     if let Some(timeline_mid) = timeline_mid {
       weibo_hot_timeline_pic_r_qry.insert(rbs::value!("mid"), rbs::value!(timeline_mid));
     }
 
-    Self::select_by_map(&weibo_db_rb_conn, weibo_hot_timeline_pic_r_qry).await.map_err(|flaw| {
+    Self::select_by_map(weibo_db_rb_conn, weibo_hot_timeline_pic_r_qry).await.map_err(|flaw| {
       WeiboError::RbatisError(flaw.to_string())
     })
   }
@@ -343,16 +332,13 @@ impl WeiboHotTimelinePic {
   ///
   /// ## 参数
   /// - `hot_timeline_pic_arrs`: 新的微博热门推荐图片数据
-  pub async fn weibo_hot_timeline_pic_u(hot_timeline_pic_arrs: Vec<Self>)
-                                        -> Result<(), WeiboError> {
+  pub async fn weibo_hot_timeline_pic_u(
+    weibo_db_rb_conn: &RBatis, hot_timeline_pic_arrs: Vec<Self>) -> Result<(), WeiboError> {
     if hot_timeline_pic_arrs.is_empty() {
       return Ok(());
     }
 
-    let weibo_db_rb_conn = RBatis::new();
-    weibo_db_rb_conn.link(SqliteDriver {}, WEIBO_DB_PTH).await?;
-
-    Self::insert_batch(&weibo_db_rb_conn, &hot_timeline_pic_arrs, 10).await.map(|_| ()).map_err(
+    Self::insert_batch(weibo_db_rb_conn, &hot_timeline_pic_arrs, 10).await.map(|_| ()).map_err(
       |flaw| {
         WeiboError::RbatisError(flaw.to_string())
       }
@@ -364,11 +350,8 @@ impl WeiboHotTimelinePic {
   /// ## 参数
   /// - `no_sieve`: 无筛选条件，删除全部数据时的保证参数
   /// - `timeline_mid`: 热门推荐的mid，可选
-  pub async fn weibo_hot_timeline_pic_d(no_sieve: bool, timeline_mid: Option<String>,
-  ) -> Result<(), WeiboError> {
-    let weibo_db_rb_conn = RBatis::new();
-    weibo_db_rb_conn.link(SqliteDriver {}, WEIBO_DB_PTH).await?;
-
+  pub async fn weibo_hot_timeline_pic_d(weibo_db_rb_conn: &RBatis, no_sieve: bool,
+                                        timeline_mid: Option<String>) -> Result<(), WeiboError> {
     let mut weibo_hot_timeline_pic_d_qry = rbs::value! {};
 
     if let Some(timeline_mid) = timeline_mid {
@@ -378,7 +361,7 @@ impl WeiboHotTimelinePic {
                                          but no_sieve guarantee isn't provided.".to_string()));
     }
 
-    Self::delete_by_map(&weibo_db_rb_conn, weibo_hot_timeline_pic_d_qry).await.map(|_| ()).map_err(
+    Self::delete_by_map(weibo_db_rb_conn, weibo_hot_timeline_pic_d_qry).await.map(|_| ()).map_err(
       |flaw| {
         WeiboError::RbatisError(flaw.to_string())
       }
@@ -444,12 +427,10 @@ impl WeiboHotTimelineComm {
   /// ## 返回
   /// 成功则返回符合查询条件的微博热门推荐评论数据
   pub async fn weibo_hot_timeline_comm_r(
+    weibo_db_rb_conn: &RBatis,
     timeline_mid: Option<String>, timeline_comm_mid: Option<String>,
     timeline_mem_id: Option<String>, timeline_mem_name: Option<String>,
     timeline_comm_era: Option<String>) -> Result<Vec<Self>, WeiboError> {
-    let weibo_db_rb_conn = RBatis::new();
-    weibo_db_rb_conn.link(SqliteDriver {}, WEIBO_DB_PTH).await?;
-
     let mut weibo_hot_timeline_comm_r_qry = rbs::value! {};
     if let Some(timeline_mid) = timeline_mid {
       weibo_hot_timeline_comm_r_qry.insert(rbs::value!("mid"), rbs::value!(timeline_mid));
@@ -467,7 +448,7 @@ impl WeiboHotTimelineComm {
       weibo_hot_timeline_comm_r_qry.insert(rbs::value!("comm_era"), rbs::value!(timeline_comm_era));
     }
 
-    Self::select_by_map(&weibo_db_rb_conn, weibo_hot_timeline_comm_r_qry).await.map_err(|flaw| {
+    Self::select_by_map(weibo_db_rb_conn, weibo_hot_timeline_comm_r_qry).await.map_err(|flaw| {
       WeiboError::RbatisError(flaw.to_string())
     })
   }
@@ -476,16 +457,13 @@ impl WeiboHotTimelineComm {
   ///
   /// ## 参数
   /// - `hot_timeline_comm_arrs`: 新的微博热门推荐评论数据
-  pub async fn weibo_hot_timeline_comm_u(hot_timeline_comm_arrs: Vec<Self>)
-                                         -> Result<(), WeiboError> {
+  pub async fn weibo_hot_timeline_comm_u(
+    weibo_db_rb_conn: &RBatis, hot_timeline_comm_arrs: Vec<Self>) -> Result<(), WeiboError> {
     if hot_timeline_comm_arrs.is_empty() {
       return Ok(());
     }
 
-    let weibo_db_rb_conn = RBatis::new();
-    weibo_db_rb_conn.link(SqliteDriver {}, WEIBO_DB_PTH).await?;
-
-    Self::insert_batch(&weibo_db_rb_conn, &hot_timeline_comm_arrs, 10).await.map(|_| ()).map_err(
+    Self::insert_batch(weibo_db_rb_conn, &hot_timeline_comm_arrs, 10).await.map(|_| ()).map_err(
       |flaw| {
         WeiboError::RbatisError(flaw.to_string())
       }
@@ -500,11 +478,9 @@ impl WeiboHotTimelineComm {
   /// - `timeline_comm_mid`: 评论的mid，可选
   /// - `timeline_mem_id`: 评论用户id，可选
   pub async fn weibo_hot_timeline_comm_d(
+    weibo_db_rb_conn: &RBatis,
     no_sieve: bool, timeline_mid: Option<String>, timeline_comm_mid: Option<String>,
     timeline_mem_id: Option<String>) -> Result<(), WeiboError> {
-    let weibo_db_rb_conn = RBatis::new();
-    weibo_db_rb_conn.link(SqliteDriver {}, WEIBO_DB_PTH).await?;
-
     let mut weibo_hot_timeline_comm_d_qry = rbs::value! {};
 
     if let Some(timeline_mid) = timeline_mid {
@@ -521,7 +497,7 @@ impl WeiboHotTimelineComm {
                                          but no_sieve guarantee isn't provided.".to_string()));
     }
 
-    Self::delete_by_map(&weibo_db_rb_conn, weibo_hot_timeline_comm_d_qry).await.map(|_| ()).map_err(
+    Self::delete_by_map(weibo_db_rb_conn, weibo_hot_timeline_comm_d_qry).await.map(|_| ()).map_err(
       |flaw| {
         WeiboError::RbatisError(flaw.to_string())
       }
