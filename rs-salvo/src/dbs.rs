@@ -1,3 +1,4 @@
+use jzon::{object, JsonValue};
 use rbatis::RBatis;
 use serde::Deserialize;
 use serde::Serialize;
@@ -17,6 +18,18 @@ pub struct WeiboHotSearch {
   pub occur_era: String,
 }
 rbatis::crud!(WeiboHotSearch {}, "weibo_hot_search");
+
+impl From<WeiboHotSearch> for JsonValue {
+  fn from(weibo_hot_search: WeiboHotSearch) -> Self {
+    object! {
+      id: weibo_hot_search.id,
+      title: weibo_hot_search.title,
+      number: weibo_hot_search.number,
+      special: weibo_hot_search.special,
+      occur_era: weibo_hot_search.occur_era
+    }
+  }
+}
 
 impl WeiboHotSearch {
   /// 创建一个微博热搜WeiboHotSearch对象
