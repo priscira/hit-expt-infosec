@@ -1,7 +1,7 @@
 use jzon::object;
 use jzon::JsonValue;
 use rbatis::RBatis;
-use serde::Deserialize;
+use serde::{Deserialize, Deserializer};
 use serde::Serialize;
 use crate::exceptions::WeiboError;
 
@@ -418,6 +418,7 @@ pub struct WeiboHotTimelineComm {
   pub mem_name: String,
   pub comm_era: String,
   // 是否是评论回复
+  #[serde(deserialize_with = "deserialize_num2b")]
   pub reply: bool,
   // 如果是评论回复，存储其根评论的id
   pub senior_id: String,
@@ -560,4 +561,12 @@ impl WeiboHotTimelineComm {
       }
     )
   }
+}
+
+fn deserialize_num2b<'de, D>(deserializer: D) -> Result<bool, D::Error>
+                             where
+                               D: Deserializer<'de>,
+{
+  let reply_num = i32::deserialize(deserializer)?;
+  Ok(reply_num != 0)
 }
