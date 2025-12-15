@@ -34,5 +34,5 @@ CREATE TABLE IF NOT EXISTS weibo_hot_timeline_comm
  mem_id TEXT NOT NULL,
  mem_name TEXT NOT NULL,
  comm_era TEXT NOT NULL CHECK (comm_era GLOB '????-??-??'),
- reply INTEGER NOT NULL,
+ reply BOOLEAN NOT NULL,
  senior_id TEXT NOT NULL);

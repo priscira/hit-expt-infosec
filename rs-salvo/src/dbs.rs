@@ -1,4 +1,5 @@
-use jzon::{object, JsonValue};
+use jzon::object;
+use jzon::JsonValue;
 use rbatis::RBatis;
 use serde::Deserialize;
 use serde::Serialize;
@@ -149,6 +150,20 @@ pub struct WeiboHotTimeline {
   pub occur_era: String,
 }
 rbatis::crud!(WeiboHotTimeline {}, "weibo_hot_timeline");
+
+impl From<WeiboHotTimeline> for JsonValue {
+  fn from(weibo_hot_timeline: WeiboHotTimeline) -> Self {
+    object! {
+      id: weibo_hot_timeline.id,
+      mid: weibo_hot_timeline.mid,
+      mblogid: weibo_hot_timeline.mblogid,
+      text: weibo_hot_timeline.text,
+      mem_id: weibo_hot_timeline.mem_id,
+      mem_name: weibo_hot_timeline.mem_name,
+      occur_era: weibo_hot_timeline.occur_era
+    }
+  }
+}
 
 impl WeiboHotTimeline {
   /// 创建一个微博热门推荐WeiboHotTimeline对象
@@ -301,6 +316,17 @@ pub struct WeiboHotTimelinePic {
 }
 rbatis::crud!(WeiboHotTimelinePic {}, "weibo_hot_timeline_pic");
 
+impl From<WeiboHotTimelinePic> for JsonValue {
+  fn from(weibo_hot_timeline_pic: WeiboHotTimelinePic) -> Self {
+    object! {
+      id: weibo_hot_timeline_pic.id,
+      mid: weibo_hot_timeline_pic.mid,
+      pic_id: weibo_hot_timeline_pic.pic_id,
+      pic_url: weibo_hot_timeline_pic.pic_url
+    }
+  }
+}
+
 impl WeiboHotTimelinePic {
   /// 创建一个微博热门推荐图片WeiboHotTimelinePic对象
   ///
@@ -397,6 +423,22 @@ pub struct WeiboHotTimelineComm {
   pub senior_id: String,
 }
 rbatis::crud!(WeiboHotTimelineComm {}, "weibo_hot_timeline_comm");
+
+impl From<WeiboHotTimelineComm> for JsonValue {
+  fn from(weibo_hot_timeline_comm: WeiboHotTimelineComm) -> Self {
+    object! {
+      id: weibo_hot_timeline_comm.id,
+      mid: weibo_hot_timeline_comm.mid,
+      comm_mid: weibo_hot_timeline_comm.comm_mid,
+      text: weibo_hot_timeline_comm.text,
+      mem_id: weibo_hot_timeline_comm.mem_id,
+      mem_name: weibo_hot_timeline_comm.mem_name,
+      comm_era: weibo_hot_timeline_comm.comm_era,
+      reply: weibo_hot_timeline_comm.reply,
+      senior_id: weibo_hot_timeline_comm.senior_id
+    }
+  }
+}
 
 impl WeiboHotTimelineComm {
   /// 创建一个微博热门推荐评论WeiboHotTimelineComm对象

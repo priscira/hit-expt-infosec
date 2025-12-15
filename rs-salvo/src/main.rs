@@ -44,14 +44,20 @@ async fn main() {
     hoop(CatchPanic::new()).
     get(hello).
     push(Router::with_path("r").push(
-      Router::with_path("hot_search").post(hot_search_r)
-    )).
+      Router::with_path("hot_search").post(hot_search_r)).push(
+      Router::with_path("hot_timeline").post(hot_timeline_r)).push(
+      Router::with_path("hot_timeline_comm").post(hot_timeline_comm_r))
+    ).
     push(Router::with_path("u").push(
-      Router::with_path("hot_search").post(hot_search_u)
-    )).
+      Router::with_path("hot_search").post(hot_search_u)).push(
+      Router::with_path("hot_timeline").post(hot_timeline_u)).push(
+      Router::with_path("hot_timeline_comm").post(hot_timeline_comm_u))
+    ).
     push(Router::with_path("d").push(
-      Router::with_path("hot_search").post(hot_search_d)
-    ));
+      Router::with_path("hot_search").post(hot_search_d)).push(
+      Router::with_path("hot_timeline").post(hot_timeline_d)).push(
+      Router::with_path("hot_timeline_comm").post(hot_timeline_comm_d))
+    );
   let salvo_svc = Service::new(salvo_rt).hoop(LogLogger::new());
   Server::new(salvo_accept).serve(salvo_svc).await;
 }
