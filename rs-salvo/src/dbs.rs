@@ -251,9 +251,8 @@ impl WeiboHotTimeline {
     // 查询图片
     let mut timeline_pic_tbls: HashMap<String, Vec<WeiboHotTimelinePic>> = HashMap::new();
     if pic {
-      let mut timeline_pic_r_qry = rbs::value! {};
-      timeline_pic_r_qry.insert(rbs::value!("mid"), rbs::value!(&timeline_mid_arrs));
-      let timeline_pic_arrs = WeiboHotTimelinePic::select_by_map(weibo_db_rb_conn, timeline_pic_r_qry).await?;
+      let timeline_pic_arrs = WeiboHotTimelinePic::weibo_hot_timeline_pic_r(
+        weibo_db_rb_conn, Some(&timeline_mid_arrs)).await?;
       for timeline_pic_arri in timeline_pic_arrs {
         timeline_pic_tbls.entry(timeline_pic_arri.mid.clone()).or_insert_with(Vec::new).
           push(timeline_pic_arri);
@@ -263,9 +262,8 @@ impl WeiboHotTimeline {
     // 查询评论
     let mut timeline_comm_tbls: HashMap<String, Vec<WeiboHotTimelineComm>> = HashMap::new();
     if comm {
-      let mut timeline_comm_r_qry = rbs::value! {};
-      timeline_comm_r_qry.insert(rbs::value!("mid"), rbs::value!(&timeline_mid_arrs));
-      let timeline_comm_arrs = WeiboHotTimelineComm::select_by_map(weibo_db_rb_conn, timeline_comm_r_qry).await?;
+      let timeline_comm_arrs = WeiboHotTimelineComm::weibo_hot_timeline_comm_r(
+        weibo_db_rb_conn, Some(&timeline_mid_arrs), None, None, None, None).await?;
       for timeline_comm_arri in timeline_comm_arrs {
         timeline_comm_tbls.entry(timeline_comm_arri.mid.clone()).or_insert_with(Vec::new).
           push(timeline_comm_arri);
@@ -411,14 +409,15 @@ impl WeiboHotTimelinePic {
   ///
   /// ## 参数
   /// - `weibo_db_rb_conn`：rbatis数据库连接
-  /// - `timeline_mid`: 热门推荐的mid，可选
+  /// - `timeline_mid_arrs`: 热门推荐的mid，可选
   ///
   /// ## 返回
   /// 成功则返回符合查询条件的微博热门推荐图片数据
-  pub async fn weibo_hot_timeline_pic_r(
-    weibo_db_rb_conn: &RBatis, timeline_mid: Option<String>) -> Result<Vec<Self>, WeiboError> {
+  pub async fn weibo_hot_timeline_pic_r(weibo_db_rb_conn: &RBatis,
+                                        timeline_mid_arrs: Option<&Vec<String>>,
+  ) -> Result<Vec<Self>, WeiboError> {
     let mut weibo_hot_timeline_pic_r_qry = rbs::value! {};
-    if let Some(timeline_mid) = timeline_mid {
+    if let Some(timeline_mid) = timeline_mid_arrs {
       weibo_hot_timeline_pic_r_qry.insert(rbs::value!("mid"), rbs::value!(timeline_mid));
     }
 
@@ -537,7 +536,7 @@ impl WeiboHotTimelineComm {
   ///
   /// ## 参数
   /// - `weibo_db_rb_conn`：rbatis数据库连接
-  /// - `timeline_mid`: 热门推荐的mid，可选
+  /// - `timeline_mid_arrs`: 热门推荐的mid，可选
   /// - `timeline_comm_mid`: 评论的mid，可选
   /// - `timeline_mem_id`: 评论用户id，可选
   /// - `timeline_mem_name`: 评论用户名，可选
@@ -547,11 +546,11 @@ impl WeiboHotTimelineComm {
   /// 成功则返回符合查询条件的微博热门推荐评论数据
   pub async fn weibo_hot_timeline_comm_r(
     weibo_db_rb_conn: &RBatis,
-    timeline_mid: Option<String>, timeline_comm_mid: Option<String>,
+    timeline_mid_arrs: Option<&Vec<String>>, timeline_comm_mid: Option<String>,
     timeline_mem_id: Option<String>, timeline_mem_name: Option<String>,
     timeline_comm_era: Option<String>) -> Result<Vec<Self>, WeiboError> {
     let mut weibo_hot_timeline_comm_r_qry = rbs::value! {};
-    if let Some(timeline_mid) = timeline_mid {
+    if let Some(timeline_mid) = timeline_mid_arrs {
       weibo_hot_timeline_comm_r_qry.insert(rbs::value!("mid"), rbs::value!(timeline_mid));
     }
     if let Some(timeline_comm_mid) = timeline_comm_mid {

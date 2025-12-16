@@ -199,15 +199,17 @@ pub async fn hot_timeline_d(req: &mut Request, depot: &mut Depot) -> Result<Resp
 #[handler]
 pub async fn hot_timeline_comm_r(
   req: &mut Request, depot: &mut Depot) -> Result<RespBd, WeiboError> {
-  let mut timeline_mid: Option<String> = None;
+  let mut timeline_mid_arrs: Option<Vec<String>> = None;
   let mut timeline_comm_mid: Option<String> = None;
   let mut timeline_mem_id: Option<String> = None;
   let mut timeline_mem_name: Option<String> = None;
   let mut timeline_comm_era: Option<String> = None;
   if let Some(req_bd_hot_timeline_comm_r) = jzon_parse_req_bd(req).await?.as_object() {
-    timeline_mid = req_bd_hot_timeline_comm_r.get("timeline_mid").
-      and_then(|val| val.as_str()).
-      map(|val| val.to_string());
+    timeline_mid_arrs = req_bd_hot_timeline_comm_r.get("timeline_mid_arrs").
+      and_then(|arrs| arrs.as_array()).
+      map(|arrs| {
+        arrs.iter().filter_map(|val| val.as_str().map(String::from)).collect()
+      });
     timeline_comm_mid = req_bd_hot_timeline_comm_r.get("timeline_comm_mid").
       and_then(|val| val.as_str()).
       map(|val| val.to_string());
@@ -225,8 +227,8 @@ pub async fn hot_timeline_comm_r(
     "cannot connect to the database".to_string(),
   ))?;
   let weibo_hot_search_arrs = WeiboHotTimelineComm::weibo_hot_timeline_comm_r(
-    weibo_db_rb_conn, timeline_mid, timeline_comm_mid, timeline_mem_id, timeline_mem_name,
-    timeline_comm_era).await?;
+    weibo_db_rb_conn, timeline_mid_arrs.as_ref(),
+    timeline_comm_mid, timeline_mem_id, timeline_mem_name, timeline_comm_era).await?;
   Ok(RespBd::suc_resp(weibo_hot_search_arrs))
 }
 
