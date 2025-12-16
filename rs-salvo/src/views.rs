@@ -122,6 +122,8 @@ pub async fn hot_timeline_r(req: &mut Request, depot: &mut Depot) -> Result<Resp
   let mut timeline_mem_id: Option<String> = None;
   let mut timeline_mem_name: Option<String> = None;
   let mut timeline_occur_era: Option<String> = None;
+  let mut pic: bool = false;
+  let mut comm: bool = false;
   if let Some(req_bd_hot_timeline_r) = jzon_parse_req_bd(req).await?.as_object() {
     timeline_mid = req_bd_hot_timeline_r.get("timeline_mid").
       and_then(|val| val.as_str()).
@@ -135,12 +137,19 @@ pub async fn hot_timeline_r(req: &mut Request, depot: &mut Depot) -> Result<Resp
     timeline_occur_era = req_bd_hot_timeline_r.get("timeline_occur_era").
       and_then(|val| val.as_str()).
       map(|val| val.to_string());
+    pic = req_bd_hot_timeline_r.get("pic").
+      and_then(|val| val.as_bool()).
+      ok_or_else(|| WeiboError::SalvoError("no valid pic".to_string()))?;
+    comm = req_bd_hot_timeline_r.get("comm").
+      and_then(|val| val.as_bool()).
+      ok_or_else(|| WeiboError::SalvoError("no valid comm".to_string()))?;
   }
   let weibo_db_rb_conn = depot.get("weibo_db_rb_conn").map_err(|_| WeiboError::SalvoError(
     "cannot connect to the database".to_string(),
   ))?;
   let weibo_hot_timeline_arrs = WeiboHotTimeline::weibo_hot_timeline_r(
-    weibo_db_rb_conn, timeline_mid, timeline_mem_id, timeline_mem_name, timeline_occur_era).await?;
+    weibo_db_rb_conn, timeline_mid, timeline_mem_id, timeline_mem_name, timeline_occur_era,
+    pic, comm).await?;
   Ok(RespBd::suc_resp(weibo_hot_timeline_arrs))
 }
 
@@ -195,20 +204,20 @@ pub async fn hot_timeline_comm_r(
   let mut timeline_mem_id: Option<String> = None;
   let mut timeline_mem_name: Option<String> = None;
   let mut timeline_comm_era: Option<String> = None;
-  if let Some(req_bd_hot_timeline_r) = jzon_parse_req_bd(req).await?.as_object() {
-    timeline_mid = req_bd_hot_timeline_r.get("timeline_mid").
+  if let Some(req_bd_hot_timeline_comm_r) = jzon_parse_req_bd(req).await?.as_object() {
+    timeline_mid = req_bd_hot_timeline_comm_r.get("timeline_mid").
       and_then(|val| val.as_str()).
       map(|val| val.to_string());
-    timeline_comm_mid = req_bd_hot_timeline_r.get("timeline_comm_mid").
+    timeline_comm_mid = req_bd_hot_timeline_comm_r.get("timeline_comm_mid").
       and_then(|val| val.as_str()).
       map(|val| val.to_string());
-    timeline_mem_id = req_bd_hot_timeline_r.get("timeline_mem_id").
+    timeline_mem_id = req_bd_hot_timeline_comm_r.get("timeline_mem_id").
       and_then(|val| val.as_str()).
       map(|val| val.to_string());
-    timeline_mem_name = req_bd_hot_timeline_r.get("timeline_mem_name").
+    timeline_mem_name = req_bd_hot_timeline_comm_r.get("timeline_mem_name").
       and_then(|val| val.as_str()).
       map(|val| val.to_string());
-    timeline_comm_era = req_bd_hot_timeline_r.get("timeline_comm_era").
+    timeline_comm_era = req_bd_hot_timeline_comm_r.get("timeline_comm_era").
       and_then(|val| val.as_str()).
       map(|val| val.to_string());
   }
@@ -227,11 +236,11 @@ pub async fn hot_timeline_comm_u(
   let weibo_clt: &AsyncClient = depot.get("weibo_clt").unwrap();
   let weibo_db_rb_conn: &RBatis = depot.get("weibo_db_rb_conn").unwrap();
 
-  if let Some(req_bd_hot_timeline_u) = jzon_parse_req_bd(req).await?.as_object() {
-    let timeline_mid = req_bd_hot_timeline_u.get("timeline_mid").
+  if let Some(req_bd_hot_timeline_comm_u) = jzon_parse_req_bd(req).await?.as_object() {
+    let timeline_mid = req_bd_hot_timeline_comm_u.get("timeline_mid").
       and_then(|val| val.as_str()).
       ok_or_else(|| WeiboError::SalvoError("no valid timeline_mid".to_string()))?;
-    let timeline_uid = req_bd_hot_timeline_u.get("timeline_uid").
+    let timeline_uid = req_bd_hot_timeline_comm_u.get("timeline_uid").
       and_then(|val| val.as_str()).
       ok_or_else(|| WeiboError::SalvoError("no valid timeline_uid".to_string()))?;
     utils::attain_ajax_comments_hottimeline(
@@ -248,14 +257,14 @@ pub async fn hot_timeline_comm_d(
   let mut timeline_mid: Option<String> = None;
   let mut timeline_comm_mid: Option<String> = None;
   let mut timeline_mem_id: Option<String> = None;
-  if let Some(req_bd_hot_timeline_d) = jzon_parse_req_bd(req).await?.as_object() {
-    timeline_mid = req_bd_hot_timeline_d.get("timeline_mid").
+  if let Some(req_bd_hot_timeline_comm_d) = jzon_parse_req_bd(req).await?.as_object() {
+    timeline_mid = req_bd_hot_timeline_comm_d.get("timeline_mid").
       and_then(|val| val.as_str()).
       map(|val| val.to_string());
-    timeline_comm_mid = req_bd_hot_timeline_d.get("timeline_comm_mid").
+    timeline_comm_mid = req_bd_hot_timeline_comm_d.get("timeline_comm_mid").
       and_then(|val| val.as_str()).
       map(|val| val.to_string());
-    timeline_mem_id = req_bd_hot_timeline_d.get("timeline_mem_id").
+    timeline_mem_id = req_bd_hot_timeline_comm_d.get("timeline_mem_id").
       and_then(|val| val.as_str()).
       map(|val| val.to_string());
   }

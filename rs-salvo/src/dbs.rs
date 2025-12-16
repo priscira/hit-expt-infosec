@@ -1,7 +1,9 @@
+use std::collections::HashMap;
 use jzon::object;
 use jzon::JsonValue;
 use rbatis::RBatis;
-use serde::{Deserialize, Deserializer};
+use serde::Deserialize;
+use serde::Deserializer;
 use serde::Serialize;
 use crate::exceptions::WeiboError;
 
@@ -165,6 +167,25 @@ impl From<WeiboHotTimeline> for JsonValue {
   }
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct WeiboHotTimelinePicComm {
+  #[serde(flatten)]
+  pub timeline: WeiboHotTimeline,
+  #[serde(skip_serializing_if = "Vec::is_empty", default)]
+  pub pics: Vec<WeiboHotTimelinePic>,
+  #[serde(skip_serializing_if = "Vec::is_empty", default)]
+  pub comms: Vec<WeiboHotTimelineComm>,
+}
+
+impl From<WeiboHotTimelinePicComm> for JsonValue {
+  fn from(value: WeiboHotTimelinePicComm) -> Self {
+    let mut weibo_hot_timeline_pic_comm = JsonValue::from(value.timeline);
+    weibo_hot_timeline_pic_comm["pics"] = JsonValue::from(value.pics);
+    weibo_hot_timeline_pic_comm["comms"] = JsonValue::from(value.comms);
+    weibo_hot_timeline_pic_comm
+  }
+}
+
 impl WeiboHotTimeline {
   /// 创建一个微博热门推荐WeiboHotTimeline对象
   ///
@@ -197,13 +218,15 @@ impl WeiboHotTimeline {
   /// - `timeline_mem_id`: 热门推荐的发布者的编号，可选
   /// - `timeline_mem_name`: 热门推荐的发布者的名称，可选
   /// - `timeline_occur_era`: 热门推荐出现的时间，格式YYYY-MM-DD，可选
+  /// - `pic`: 是否查询图片
+  /// - `comm`: 是否查询评论
   ///
   /// ## 返回
   /// 成功则返回符合查询条件的微博热门推荐数据
   pub async fn weibo_hot_timeline_r(
     weibo_db_rb_conn: &RBatis, timeline_mid: Option<String>, timeline_mem_id: Option<String>,
-    timeline_mem_name: Option<String>, timeline_occur_era: Option<String>)
-    -> Result<Vec<Self>, WeiboError> {
+    timeline_mem_name: Option<String>, timeline_occur_era: Option<String>, pic: bool, comm: bool)
+    -> Result<Vec<WeiboHotTimelinePicComm>, WeiboError> {
     let mut weibo_hot_timeline_r_qry = rbs::value! {};
     if let Some(timeline_mid) = timeline_mid {
       weibo_hot_timeline_r_qry.insert(rbs::value!("mid"), rbs::value!(timeline_mid));
@@ -218,9 +241,49 @@ impl WeiboHotTimeline {
       weibo_hot_timeline_r_qry.insert(rbs::value!("occur_era"), rbs::value!(timeline_occur_era));
     }
 
-    Self::select_by_map(weibo_db_rb_conn, weibo_hot_timeline_r_qry).await.map_err(|flaw| {
-      WeiboError::RbatisError(flaw.to_string())
-    })
+    let timeline_arrs = Self::select_by_map(weibo_db_rb_conn, weibo_hot_timeline_r_qry).await.
+      map_err(|flaw| {
+        WeiboError::RbatisError(flaw.to_string())
+      })?;
+    let timeline_mid_arrs: Vec<String> = timeline_arrs.iter().
+      map(|timeline_arri| timeline_arri.mid.clone()).collect();
+
+    // 查询图片
+    let mut timeline_pic_tbls: HashMap<String, Vec<WeiboHotTimelinePic>> = HashMap::new();
+    if pic {
+      let mut timeline_pic_r_qry = rbs::value! {};
+      timeline_pic_r_qry.insert(rbs::value!("mid"), rbs::value!(&timeline_mid_arrs));
+      let timeline_pic_arrs = WeiboHotTimelinePic::select_by_map(weibo_db_rb_conn, timeline_pic_r_qry).await?;
+      for timeline_pic_arri in timeline_pic_arrs {
+        timeline_pic_tbls.entry(timeline_pic_arri.mid.clone()).or_insert_with(Vec::new).
+          push(timeline_pic_arri);
+      }
+    }
+
+    // 查询评论
+    let mut timeline_comm_tbls: HashMap<String, Vec<WeiboHotTimelineComm>> = HashMap::new();
+    if comm {
+      let mut timeline_comm_r_qry = rbs::value! {};
+      timeline_comm_r_qry.insert(rbs::value!("mid"), rbs::value!(&timeline_mid_arrs));
+      let timeline_comm_arrs = WeiboHotTimelineComm::select_by_map(weibo_db_rb_conn, timeline_comm_r_qry).await?;
+      for timeline_comm_arri in timeline_comm_arrs {
+        timeline_comm_tbls.entry(timeline_comm_arri.mid.clone()).or_insert_with(Vec::new).
+          push(timeline_comm_arri);
+      }
+    }
+
+    let mut hot_timeline_arrs = Vec::with_capacity(timeline_arrs.len());
+    for timeline_arri in timeline_arrs {
+      let details = WeiboHotTimelinePicComm {
+        // 从 map 中取出关联数据，如果不存在则返回空 Vec
+        pics: timeline_pic_tbls.remove(&timeline_arri.mid).unwrap_or_default(),
+        comms: timeline_comm_tbls.remove(&timeline_arri.mid).unwrap_or_default(),
+        timeline: timeline_arri,
+      };
+      hot_timeline_arrs.push(details);
+    }
+
+    Ok(hot_timeline_arrs)
   }
 
   /// 更新微博热门推荐WeiboHotTimeline数据，如果有相同的mid则更新；否则直接插入。
