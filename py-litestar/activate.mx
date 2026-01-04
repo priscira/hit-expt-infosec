@@ -1,36 +1,30 @@
-# virtualenv path
-# example: /home/user/project/.venv
 set __VIRTUAL_ENV__ = '/home/lokalius/.local/share/virtualenvs/py-litestar-661fLgZn'
 set __BIN_NAME__ = 'bin'
-# virtualenv prompt
-# example: project-venv
 set __VIRTUAL_PROMPT__ = 'py-litestar-661fLgZn'
 
-# This file must be used with "source ./activate.mx" *from murex*
+# This file must be used with "source ./bin/activate.mx" *from murex*
 # you cannot run it directly
 
-set str virtual_env = $__VIRTUAL_ENV__
-export VIRTUAL_ENV = $virtual_env
+export VIRTUAL_ENV = $__VIRTUAL_ENV__
 
 global paths _old_virtual_path = $PATH
 export PATH = "$(VIRTUAL_ENV)/$(__BIN_NAME__):$(PATH)"
 
 set str virtual_env_prompt
 if { not $__VIRTUAL_PROMPT__ } then {
-  virtual_env_prompt = $VIRTUAL_ENV :path: [-1]
+  virtual_env_prompt = $VIRTUAL_ENV :path: [ -1 ]
 } else {
   virtual_env_prompt = $__VIRTUAL_PROMPT__
 }
 export VIRTUAL_ENV_PROMPT = $virtual_env_prompt
 
 global str _old_virtual_pythonhome
-if { env -> grep "^PYTHONHOME=" } then {
+has-env PYTHONHOME -> if {
   _old_virtual_pythonhome = $PYTHONHOME
   !export PYTHONHOME
 }
 
-global MUREX_PYTHON_VENV_OLD_PROMPT = ${ config get shell prompt }
-
+global str _old_virtual_prompt = ${ config get shell prompt }
 if {
   or \
   { env -> grep "^VIRTUAL_ENV_DISABLE_PROMPT=" -> ! } \
@@ -39,19 +33,18 @@ if {
   config set shell prompt {
     ("$VIRTUAL_ENV_PROMPT")
     (" ")
-    ${source $MUREX_PYTHON_VENV_OLD_PROMPT}
+    ${source $_old_virtual_prompt}
   }
 }
 
 alias pydoc = python -m pydoc
 
-function deactivate {
+function deactivate () {
   !alias pydoc
 
   if { $_old_virtual_path } then {
     export PATH = $_old_virtual_path
   }
-
   if { $_old_virtual_pythonhome } then {
     export PYTHONHOME = $_old_virtual_pythonhome
   }
@@ -60,14 +53,17 @@ function deactivate {
     or \
     { env -> grep "^VIRTUAL_ENV_DISABLE_PROMPT=" -> ! } \
     { $VIRTUAL_ENV_DISABLE_PROMPT == '' }
-  } then {
-    config set shell prompt $MUREX_PYTHON_VENV_OLD_PROMPT
+  } {
+    config set shell prompt $_old_virtual_prompt
   }
 
   !export VIRTUAL_ENV
   !export VIRTUAL_ENV_PROMPT
 
-  !export MUREX_PYTHON_VENV_OLD_PROMPT
+  !global _old_virtual_path
+  !global _old_virtual_pythonhome
+  !global _old_virtual_prompt
 
   !function deactivate
 }
+summary deactivate "disable the current Python virtual environment"

@@ -1,6 +1,5 @@
 .priscira
 .lokalius
-**/activate.yash
 
 **/.idea/
 
@@ -21,6 +20,8 @@ rs-salvo/Cargo.lock
 **/.pytest_cache/
 **/.ruff_cache/
 **/*.egg-info/
+**/activate.mx
+**/activate.yash
 
 **/*.db
 **/*.sqlite
