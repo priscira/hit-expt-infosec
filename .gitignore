@@ -2,6 +2,7 @@
 .lokalius
 
 **/.idea/
+**/*.lock
 
 rs-salvo/weibo.db*
 rs-salvo/weibo-log.txt
@@ -21,7 +22,6 @@ rs-salvo/Cargo.lock
 **/.ruff_cache/
 **/*.egg-info/
 **/activate.mx
-**/activate.yash
 
 **/*.db
 **/*.sqlite
