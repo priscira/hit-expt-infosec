@@ -6,13 +6,13 @@ from piccolo.engine import engine_finder
 
 
 def furnish_niquests_weibo_clt(litestar_app: Litestar):
-  weibo_clt: AsyncSession = AsyncSession(base_url="https://weibo.com/ajax/")
-  weibo_clt.headers = {
+  weibo_clt: AsyncSession = AsyncSession(base_url="https://weibo.com/ajax/", headers={
     "Referer": "https://weibo.com/newlogin",
     "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) "
                   "AppleWebKit/537.36 (KHTML, like Gecko) "
                   "Chrome/114.0.0.0 Safari/537.36"
-    }
+    })
+  weibo_clt.stream = True
   weibo_clt.verify = False
   litestar_app.state.weibo_clt = weibo_clt
 
