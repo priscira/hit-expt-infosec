@@ -42,8 +42,14 @@ impl RespBd {
   /// ## 参数
   /// - `err`: 错误信息
   pub fn err_resp(err: WeiboError) -> Self {
+    let err_des = match err {
+      WeiboError::NyquestError(_) => "cannot access weibo",
+      WeiboError::JzonError(_) => "cannot analyse weibo",
+      WeiboError::SalvoError(_) => "service error",
+      WeiboError::RbatisError(_) => "database error",
+    };
     Self {
-      info: Some(err.into()),
+      info: Some(err_des.into()),
       suc: false,
     }
   }
