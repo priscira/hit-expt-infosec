@@ -4,6 +4,7 @@ from marshmallow import fields, Schema, post_load
 from marshmallow.experimental.context import Context
 from niquests import AsyncSession
 from . import weibo
+from .exceptions import LitestarException, MarshmallowException, NiquestsException, PiccoloException
 from .dbs import WeiboHotSearch
 
 
@@ -33,15 +34,18 @@ async def attain_ajax_hotsearch(weibo_clt: AsyncSession):
     case {"data": {"realtime": list(hot_search_realtime_arrs)}}:
       hot_search_realtime_arrs = hot_search_realtime_arrs
     case _:
-      raise Exception("gain_side_hotsearch, response is not dict")
+      raise NiquestsException("/ajax/side/hotSearch, response format error")
   hot_search_arrs: list[WeiboHotSearch] = []
   weibo_hot_search_m = WeiboHotSearchM(unknown="exclude")
   occur_era = datetime.now().strftime("%Y-%m-%d")
   with Context({"occur_era": occur_era}):
     for hot_search_realtime_arri in hot_search_realtime_arrs:
-      if hot_search_realtime_arri.get("is_ad") == 1:
-        continue
-      hot_search_realtime_info = weibo_hot_search_m.load(hot_search_realtime_arri)
-      hot_search_arrs.append(hot_search_realtime_info)
+      try:
+        if hot_search_realtime_arri.get("is_ad") == 1:
+          continue
+        hot_search_realtime_info = weibo_hot_search_m.load(hot_search_realtime_arri)
+        hot_search_arrs.append(hot_search_realtime_info)
+      except Exception as e:
+        raise MarshmallowException(str(e)) from e
 
   await WeiboHotSearch.weibo_hot_search_u(hot_search_arrs)
