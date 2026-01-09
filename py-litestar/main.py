@@ -46,5 +46,20 @@ def main():
   asyncio.run(serve(litestar_app, litestar_pref))
 
 
+def test_db():
+  weibo_clt: AsyncSession = AsyncSession(base_url="https://weibo.com/ajax/", headers={
+    "Referer": "https://weibo.com/newlogin",
+    "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) "
+                  "AppleWebKit/537.36 (KHTML, like Gecko) "
+                  "Chrome/114.0.0.0 Safari/537.36"
+    })
+  weibo_clt.stream = True
+  weibo_clt.verify = False
+  import asyncio
+  from src.utils import attain_ajax_hotsearch
+  asyncio.run(attain_ajax_hotsearch(weibo_clt))
+
+
 if __name__ == "__main__":
-  main()
+  # main()
+  test_db()

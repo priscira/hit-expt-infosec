@@ -4,8 +4,8 @@ from piccolo.columns import Integer, Varchar
 from piccolo.table import Table
 
 
-class WeiboHotSearch(Table):
-  id = Integer(primary_key=True)
+class WeiboHotSearch(Table, tablename="weibo_hot_search"):
+  id = Integer(null=True, primary_key=True)
   # 热搜标题
   title = Varchar()
   # 热搜热度
@@ -18,7 +18,7 @@ class WeiboHotSearch(Table):
   @classmethod
   def weibo_hot_search_c(cls, realtime_title: str, realtime_number: int, realtime_special: str,
                          occur_era: str) -> "WeiboHotSearch":
-    return cls(title=realtime_title, number=realtime_number, special=realtime_special,
+    return cls(id=None,title=realtime_title, number=realtime_number, special=realtime_special,
                occur_era=occur_era)
 
   @classmethod
@@ -36,18 +36,7 @@ class WeiboHotSearch(Table):
   async def weibo_hot_search_u(cls, hot_search_arrs: list["WeiboHotSearch"]) -> None:
     if not hot_search_arrs:
       return
-
-    objects_to_insert = [
-      {
-        "title": item.title,
-        "number": item.number,
-        "special": item.special,
-        "occur_era": item.occur_era
-        }
-      for item in hot_search_arrs
-      ]
-
-    await cls.insert(*objects_to_insert).on_conflict_do_nothing().run()
+    await cls.insert(*hot_search_arrs).on_conflict(action="DO NOTHING").run()
 
   @classmethod
   async def weibo_hot_search_d(

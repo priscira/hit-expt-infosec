@@ -44,4 +44,4 @@ async def attain_ajax_hotsearch(weibo_clt: AsyncSession):
       hot_search_realtime_info = weibo_hot_search_m.load(hot_search_realtime_arri)
       hot_search_arrs.append(hot_search_realtime_info)
 
-  # await WeiboHotSearch.weibo_hot_search_u(hot_search_arrs)
+  await WeiboHotSearch.weibo_hot_search_u(hot_search_arrs)
