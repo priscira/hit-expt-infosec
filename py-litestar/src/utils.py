@@ -62,11 +62,27 @@ class WeiboHotTimelineM(Schema):
       )
 
 
+class WeiboHotTimelinePicM(Schema):
+  pass
+
+
 weibo_hot_search_m = WeiboHotSearchM(unknown="exclude")
 weibo_hot_timeline_m = WeiboHotTimelineM(unknown="exclude")
 
 
 async def attain_ajax_hotsearch(weibo_clt: AsyncSession) -> None:
+  """
+  获取最新热搜并插入数据库。
+
+  Parameters
+  ----------
+  weibo_clt: AsyncSession
+    nyquest异步HTTP客户端
+
+  Returns
+  -------
+  None
+  """
   hot_search_jquin: Any = await weibo.gain_side_hotsearch(weibo_clt)
   hot_search_realtime_arrs: list[dict[str, Any]] = []
   match hot_search_jquin:
@@ -84,12 +100,30 @@ async def attain_ajax_hotsearch(weibo_clt: AsyncSession) -> None:
         hot_search_realtime_info = weibo_hot_search_m.load(hot_search_realtime_arri)
         hot_search_arrs.append(hot_search_realtime_info)
       except Exception as e:
-        raise WeiboMarshmallowException(str(e)) from e
+        # raise WeiboMarshmallowException(str(e)) from e
+        continue
 
   await WeiboHotSearch.weibo_hot_search_u(hot_search_arrs)
 
 
-async def attain_ajax_hottimeline(weibo_clt: AsyncSession, pic: bool, comm: bool) -> None:
+async def attain_ajax_hottimeline(
+  weibo_clt: AsyncSession, pic: bool = False, comm: bool = False) -> None:
+  """
+  获取最新热门推荐并插入数据库。
+
+  Parameters
+  ----------
+  weibo_clt: AsyncSession
+    nyquest异步HTTP客户端
+  pic: bool
+    是否需要爬取图片
+  comm: bool
+    是否需要爬取评论
+
+  Returns
+  -------
+  None
+  """
   hot_timeline_jquin: Any = await weibo.gain_feed_hottimeline(weibo_clt)
   hot_timeline_status_arrs: list[dict[str, Any]] = []
   match hot_timeline_jquin:
@@ -103,7 +137,7 @@ async def attain_ajax_hottimeline(weibo_clt: AsyncSession, pic: bool, comm: bool
       hot_timeline_info = weibo_hot_timeline_m.load(hot_timeline_status_arri)
       hot_timelime_arrs.append(hot_timeline_info)
     except Exception as e:
-      print(e)
-      raise WeiboMarshmallowException(str(e)) from e
+      # raise WeiboMarshmallowException(str(e)) from e
+      continue
 
   await WeiboHotTimeline.weibo_hot_timeline_u(hot_timelime_arrs)

@@ -1,10 +1,11 @@
 from typing import Optional
-from piccolo.columns import Integer, Varchar
+from piccolo.columns import Integer, Varchar, ForeignKey, OnDelete, Boolean
 from piccolo.table import Table
 from .exceptions import WeiboPiccoloException
 
 
 class WeiboHotSearch(Table, tablename="weibo_hot_search"):
+  """微博热搜"""
   id = Integer(null=True, primary_key=True)
   # 热搜标题
   title = Varchar()
@@ -123,9 +124,9 @@ class WeiboHotSearch(Table, tablename="weibo_hot_search"):
 
 
 class WeiboHotTimeline(Table, tablename="weibo_hot_timeline"):
-  id = Integer(null=True, primary_key=True)
+  """微博热门推荐"""
   # 热门推荐的mid
-  mid = Varchar()
+  mid = Varchar(null=False, primary_key=True)
   # 热门推荐的mblogid
   mblogid = Varchar()
   # 热门推荐的内容
@@ -162,10 +163,9 @@ class WeiboHotTimeline(Table, tablename="weibo_hot_timeline"):
     Returns
     -------
     WeiboHotTimeline
-      微博热搜对象
+      微博热门推荐对象
     """
-    # 需要显式指定id=None，否则默认0
-    return cls(id=None, mid=timeline_mid, mblogid=timeline_mblogid, text=timeline_text,
+    return cls(mid=timeline_mid, mblogid=timeline_mblogid, text=timeline_text,
                mem_id=timeline_mem_id, mem_name=timeline_mem_name, occur_era=occur_era)
 
   @classmethod
@@ -225,7 +225,7 @@ class WeiboHotTimeline(Table, tablename="weibo_hot_timeline"):
     """
     if not hot_timeline_arrs:
       return
-    await cls.insert(*hot_timeline_arrs).on_conflict(action="DO NOTHING").run()
+    await cls.insert(*hot_timeline_arrs).run()
 
   @classmethod
   async def weibo_hot_timeline_d(cls, no_sieve: bool = False,
@@ -281,3 +281,84 @@ class WeiboHotTimeline(Table, tablename="weibo_hot_timeline"):
       weibo_hot_search_d_qry = cls.delete(force=True)
 
     await weibo_hot_search_d_qry.run()
+
+
+class WeiboHotTimelinePic(Table, tablename="weibo_hot_timeline_pic"):
+  """微博热门推荐的图片"""
+  # 图片id
+  pic_id = Varchar(null=False, primary_key=True)
+  # 图片url
+  pic_url = Varchar()
+  # 图片所属的热门推荐
+  timeline = ForeignKey(null=True, references=WeiboHotTimeline, on_delete=OnDelete.set_null)
+
+  @classmethod
+  def weibo_hot_timeline_pic_c(
+    cls, pic_id: str, pic_url: str, timeline_mid: str) -> "WeiboHotTimelinePic":
+    """
+    创建一个微博热门推荐图片WeiboHotTimelinePic对象。
+
+    Parameters
+    ----------
+    pic_id: str
+      图片id
+    pic_url: str
+      图片url
+    timeline_mid: str
+      热门推荐的mid
+
+    Returns
+    -------
+    WeiboHotTimelinePic
+      微博热门推荐图片对象
+    """
+    return cls(pic_id=pic_id, pic_url=pic_url, timeline=timeline_mid)
+
+
+class WeiboHotTimelineComm(Table, tablename="weibo_hot_timeline_comm"):
+  """微博热门推荐的评论"""
+  comm_mid = Varchar(null=False, primary_key=True)
+  text = Varchar()
+  mem_id = Varchar()
+  mem_name = Varchar()
+  comm_era = Varchar()
+  # 是否是评论回复
+  reply = Boolean()
+  # 如果是评论回复，存储其根评论
+  senior = ForeignKey(null=True, references="self", on_delete=OnDelete.set_null)
+  # 评论所属的热门推荐
+  timeline = ForeignKey(null=True, references=WeiboHotTimeline, on_delete=OnDelete.set_null)
+
+  @classmethod
+  def weibo_hot_timeline_comm_c(cls, comm_mid: str, text: str, mem_id: str, mem_name: str,
+                                comm_era: str, reply: bool = False, senior_id: Optional[str] = None,
+                                timeline_mid: Optional[str] = None) -> "WeiboHotTimelineComm":
+    """
+    创建一个微博热门推荐评论WeiboHotTimelineComm对象。
+
+    Parameters
+    ----------
+    comm_mid: str
+      评论id
+    text: str
+      评论内容
+    mem_id: str
+      评论者id
+    mem_name: str
+      评论者昵称
+    comm_era: str
+      评论时间
+    reply: bool
+      是否是评论回复
+    senior_id: str | None
+      如果是评论回复，存储其根评论的评论id
+    timeline_mid: str | None
+      热门推荐的mid
+
+    Returns
+    -------
+    WeiboHotTimelineComm
+      微博热门推荐评论对象
+    """
+    return cls(comm_mid=comm_mid, text=text, mem_id=mem_id, mem_name=mem_name,
+               comm_era=comm_era, reply=reply, senior=senior_id, timeline=timeline_mid)
