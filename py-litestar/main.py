@@ -1,8 +1,41 @@
 import hypercorn
 from hypercorn.asyncio import serve
-from litestar import Litestar
+from litestar import Litestar, MediaType, Request, Response
+from litestar.exceptions import LitestarException
+from litestar.status_codes import HTTP_200_OK, HTTP_500_INTERNAL_SERVER_ERROR
 from niquests import AsyncSession
-from src import views
+from src import exceptions, views
+
+
+def tackle_litestar_expt(_: Request, expt: Exception) -> Response:
+  expt_ctn = getattr(expt, "detail", "")
+
+  return Response(
+    media_type=MediaType.JSON,
+    content=views.RespBdM.err_resp(expt_ctn),
+    status_code=HTTP_200_OK,
+    )
+
+
+def tackle_weibo_expt(_: Request, expt: exceptions.WeiboException) -> Response:
+  expt_ctn = ""
+  match type(expt):
+    case exceptions.WeiboLitestarException:
+      expt_ctn = "service error"
+    case exceptions.WeiboPiccoloException:
+      expt_ctn = "database error"
+    case exceptions.WeiboNiquestsException:
+      expt_ctn = "cannot access weibo"
+    case exceptions.WeiboMarshmallowException:
+      expt_ctn = "analyse error"
+    case _:
+      expt_ctn = "internal error"
+
+  return Response(
+    media_type=MediaType.JSON,
+    content=views.RespBdM.err_resp(expt_ctn),
+    status_code=HTTP_200_OK,
+    )
 
 
 def furnish_niquests_weibo_clt(litestar_app: Litestar):
@@ -35,10 +68,15 @@ async def forsake_niquests_weibo_clt(litestar_app: Litestar):
 
 def furnish_litestar_app() -> Litestar:
   return Litestar(
+    exception_handlers={
+      LitestarException: tackle_litestar_expt,
+      HTTP_500_INTERNAL_SERVER_ERROR: tackle_weibo_expt},
     on_startup=[furnish_niquests_weibo_clt],
     on_shutdown=[forsake_niquests_weibo_clt],
     route_handlers=[
-      views.weibo_controller_r_ctrl
+      views.weibo_controller_r_ctrl,
+      views.weibo_controller_u_ctrl,
+      views.weibo_controller_d_ctrl,
       ])
 
 

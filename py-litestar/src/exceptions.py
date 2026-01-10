@@ -4,21 +4,21 @@ class WeiboException(Exception):
     self.msg = msg
 
 
-class LitestarException(WeiboException):
+class WeiboLitestarException(WeiboException):
   def __str__(self):
     return f"Litestar Exception: {self.msg}"
 
 
-class MarshmallowException(WeiboException):
+class WeiboMarshmallowException(WeiboException):
   def __str__(self):
     return f"Marshmallow Exception: {self.msg}"
 
 
-class NiquestsException(WeiboException):
+class WeiboNiquestsException(WeiboException):
   def __str__(self):
     return f"Niquests Exception: {self.msg}"
 
 
-class PiccoloException(WeiboException):
+class WeiboPiccoloException(WeiboException):
   def __str__(self):
     return f"Piccolo Exception: {self.msg}"

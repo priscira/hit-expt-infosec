@@ -1,7 +1,7 @@
 from typing import Optional
 from piccolo.columns import Integer, Varchar
 from piccolo.table import Table
-from .exceptions import PiccoloException
+from .exceptions import WeiboPiccoloException
 
 
 class WeiboHotSearch(Table, tablename="weibo_hot_search"):
@@ -109,7 +109,7 @@ class WeiboHotSearch(Table, tablename="weibo_hot_search"):
       无条件清空数据库却未保证no_sieve参数
     """
     if not no_sieve and occur_era is None:
-      raise PiccoloException(
+      raise WeiboPiccoloException(
         "delete all the data from the database, but no_sieve guarantee isn't provided.")
 
     if not no_sieve:
